@@ -4,8 +4,8 @@ namespace Orang
 {
     internal enum SyncConflictResolution
     {
-        SourceWins = 0,
-        TargetWins = 1,
+        LeftWins = 0,
+        RightWins = 1,
         Ask = 2,
     }
 }

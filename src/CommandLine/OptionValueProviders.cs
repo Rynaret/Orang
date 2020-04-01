@@ -396,8 +396,8 @@ namespace Orang.CommandLine
 
         public static OptionValueProvider SyncConflictResolutionProvider { get; } = new OptionValueProvider(MetaValues.SyncConflictResolution,
             SimpleOptionValue.Create(SyncConflictResolution.Ask, description: ""),
-            SimpleOptionValue.Create(SyncConflictResolution.SourceWins, description: ""),
-            SimpleOptionValue.Create(SyncConflictResolution.TargetWins, description: "")
+            SimpleOptionValue.Create(SyncConflictResolution.LeftWins, description: ""),
+            SimpleOptionValue.Create(SyncConflictResolution.RightWins, description: "")
         );
 
         public static ImmutableDictionary<string, OptionValueProvider> ProvidersByName

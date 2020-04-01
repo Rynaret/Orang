@@ -13,8 +13,9 @@ namespace Orang.CommandLine
 {
     internal sealed class SyncCommand : CommonCopyCommand<SyncCommandOptions>
     {
-        private bool _isSourceToTarget;
+        private bool _isRightToLeft;
         private HashSet<string> _destinationPaths;
+        private HashSet<string> _ignoredPaths;
 
         public SyncCommand(SyncCommandOptions options) : base(options)
         {
@@ -34,180 +35,208 @@ namespace Orang.CommandLine
 
             try
             {
-                _isSourceToTarget = true;
+                _isRightToLeft = false;
                 base.ExecuteDirectory(directoryPath, context);
             }
             finally
             {
-                _isSourceToTarget = false;
+                _isRightToLeft = true;
             }
 
-            IgnoredPaths = _destinationPaths;
+            _ignoredPaths = _destinationPaths;
             _destinationPaths = null;
 
-            string target = directoryPath;
-            directoryPath = Target;
+            string rightDirectory = directoryPath;
+            directoryPath = Options.Target;
 
             Options.Paths = ImmutableArray.Create(new PathInfo(directoryPath, PathOrigin.None));
-            Options.Target = target;
+            Options.Target = rightDirectory;
 
-            if (ConflictResolution == SyncConflictResolution.SourceWins)
+            if (ConflictResolution == SyncConflictResolution.LeftWins)
             {
-                ConflictResolution = SyncConflictResolution.TargetWins;
+                ConflictResolution = SyncConflictResolution.RightWins;
             }
-            else if (ConflictResolution == SyncConflictResolution.TargetWins)
+            else if (ConflictResolution == SyncConflictResolution.RightWins)
             {
-                ConflictResolution = SyncConflictResolution.SourceWins;
+                ConflictResolution = SyncConflictResolution.LeftWins;
             }
 
             base.ExecuteDirectory(directoryPath, context);
 
-            IgnoredPaths = null;
+            _ignoredPaths = null;
         }
 
         protected override void ExecuteOperation(SearchContext context, string sourcePath, string destinationPath, bool isDirectory, string indent)
         {
-            bool fileExists = File.Exists(destinationPath);
-            bool directoryExists = !fileExists && Directory.Exists(destinationPath);
+            if (_ignoredPaths?.Contains(sourcePath) == true)
+                return;
 
-            bool? preferTarget = null;
+            ExecuteOperation();
 
-            if (isDirectory)
+            _destinationPaths?.Add(destinationPath);
+
+            void ExecuteOperation()
             {
-                if (directoryExists)
-                {
-                    if (!_isSourceToTarget)
-                        return;
+                bool fileExists = File.Exists(destinationPath);
+                bool directoryExists = !fileExists && Directory.Exists(destinationPath);
 
-                    if (File.GetAttributes(sourcePath) == File.GetAttributes(destinationPath))
-                        return;
-                }
-            }
-            else if (fileExists)
-            {
-                if (!_isSourceToTarget)
-                    return;
+                bool? preferLeft = null;
 
-                int diff = File.GetLastWriteTimeUtc(sourcePath).CompareTo(File.GetLastWriteTimeUtc(destinationPath));
-
-                if (diff > 0)
-                {
-                    preferTarget = false;
-                }
-                else if (diff < 0)
-                {
-                    preferTarget = true;
-                }
-            }
-
-            if (preferTarget == null)
-            {
-                if (!isDirectory
-                    && fileExists
-                    && Options.CompareOptions != FileCompareOptions.None
-                    && FileSystemHelpers.FileEquals(sourcePath, destinationPath, Options.CompareOptions))
-                {
-                    return;
-                }
-
-                if (ConflictResolution == SyncConflictResolution.Ask)
-                {
-                    WritePathPrefix(sourcePath, "SRC", default, indent);
-                    WritePathPrefix(destinationPath, "TRG", default, indent);
-
-                    DialogResult dialogResult = ConsoleHelpers.Ask("Prefer target directory?", indent);
-
-                    switch (dialogResult)
-                    {
-                        case DialogResult.Yes:
-                            {
-                                preferTarget = true;
-                                break;
-                            }
-                        case DialogResult.YesToAll:
-                            {
-                                preferTarget = true;
-                                ConflictResolution = SyncConflictResolution.TargetWins;
-                                break;
-                            }
-                        case DialogResult.No:
-                        case DialogResult.None:
-                            {
-                                preferTarget = false;
-                                break;
-                            }
-                        case DialogResult.NoToAll:
-                            {
-                                preferTarget = false;
-                                ConflictResolution = SyncConflictResolution.SourceWins;
-                                break;
-                            }
-                        case DialogResult.Cancel:
-                            {
-                                context.TerminationReason = TerminationReason.Canceled;
-                                return;
-                            }
-                        default:
-                            {
-                                throw new InvalidOperationException($"Unknown enum value '{dialogResult}'.");
-                            }
-                    }
-                }
-                else if (ConflictResolution == SyncConflictResolution.SourceWins)
-                {
-                    preferTarget = false;
-                }
-                else if (ConflictResolution == SyncConflictResolution.TargetWins)
-                {
-                    preferTarget = true;
-                }
-                else
-                {
-                    throw new InvalidOperationException($"Unknown enum value '{ConflictResolution}'.");
-                }
-            }
-
-            ExecuteOperations(context, sourcePath, destinationPath, isDirectory, fileExists, directoryExists, preferTarget ?? false, indent);
-        }
-
-        private void ExecuteOperations(
-            SearchContext context,
-            string sourcePath,
-            string destinationPath,
-            bool isDirectory,
-            bool fileExists,
-            bool directoryExists,
-            bool preferTarget,
-            string indent)
-        {
-            SearchTelemetry telemetry = context.Telemetry;
-
-            if (isDirectory)
-            {
-                if (preferTarget)
+                if (isDirectory)
                 {
                     if (directoryExists)
                     {
-                        WritePath(sourcePath, OperationKind.Update, indent);
-                        UpdateAttributes(destinationPath, sourcePath);
-                        telemetry.UpdatedCount++;
+                        Debug.Assert(!_isRightToLeft);
+
+                        if (_isRightToLeft)
+                            return;
+
+                        if (File.GetAttributes(sourcePath) == File.GetAttributes(destinationPath))
+                            return;
+                    }
+                }
+                else if (fileExists)
+                {
+                    Debug.Assert(!_isRightToLeft);
+
+                    if (_isRightToLeft)
+                        return;
+
+                    int diff = File.GetLastWriteTimeUtc(sourcePath).CompareTo(File.GetLastWriteTimeUtc(destinationPath));
+
+                    if (diff > 0)
+                    {
+                        preferLeft = true;
+                    }
+                    else if (diff < 0)
+                    {
+                        preferLeft = false;
+                    }
+                }
+
+                if (preferLeft == null)
+                {
+                    if (!_isRightToLeft
+                        && !isDirectory
+                        && fileExists
+                        && Options.CompareOptions != FileCompareOptions.None
+                        && FileSystemHelpers.FileEquals(sourcePath, destinationPath, Options.CompareOptions))
+                    {
+                        return;
+                    }
+
+                    if (ConflictResolution == SyncConflictResolution.Ask)
+                    {
+                        string leftPrefix = GetPrefix(invert: _isRightToLeft);
+                        string rightPrefix = GetPrefix(invert: !_isRightToLeft);
+
+                        WritePathPrefix((_isRightToLeft) ? destinationPath : sourcePath, leftPrefix, default, indent);
+                        WritePathPrefix((_isRightToLeft) ? sourcePath : destinationPath, rightPrefix, default, indent);
+
+                        DialogResult dialogResult = ConsoleHelpers.Ask("Prefer left directory?", indent);
+
+                        switch (dialogResult)
+                        {
+                            case DialogResult.Yes:
+                                {
+                                    preferLeft = true;
+                                    break;
+                                }
+                            case DialogResult.YesToAll:
+                                {
+                                    preferLeft = true;
+                                    ConflictResolution = SyncConflictResolution.LeftWins;
+                                    break;
+                                }
+                            case DialogResult.No:
+                                {
+                                    preferLeft = false;
+                                    break;
+                                }
+                            case DialogResult.NoToAll:
+                                {
+                                    preferLeft = false;
+                                    ConflictResolution = SyncConflictResolution.RightWins;
+                                    break;
+                                }
+                            case DialogResult.None:
+                                {
+                                    return;
+                                }
+                            case DialogResult.Cancel:
+                                {
+                                    context.TerminationReason = TerminationReason.Canceled;
+                                    return;
+                                }
+                            default:
+                                {
+                                    throw new InvalidOperationException($"Unknown enum value '{dialogResult}'.");
+                                }
+                        }
+                    }
+                    else if (ConflictResolution == SyncConflictResolution.LeftWins)
+                    {
+                        preferLeft = true;
+                    }
+                    else if (ConflictResolution == SyncConflictResolution.RightWins)
+                    {
+                        preferLeft = false;
                     }
                     else
                     {
-                        WritePath(sourcePath, OperationKind.Delete, indent);
-                        DeleteDirectory(sourcePath);
-                        telemetry.DeletedCount++;
-
-                        if (fileExists)
-                        {
-                            WritePath(sourcePath, OperationKind.Add, indent);
-                            CopyFile(destinationPath, sourcePath);
-                            telemetry.AddedCount++;
-                        }
+                        throw new InvalidOperationException($"Unknown enum value '{ConflictResolution}'.");
                     }
                 }
-                else if (directoryExists)
+
+                preferLeft ??= true;
+
+                if (_isRightToLeft)
+                    preferLeft = !preferLeft;
+
+                if (isDirectory)
                 {
+                    ExecuteDirectoryOperations(context.Telemetry, sourcePath, destinationPath, fileExists, directoryExists, preferLeft.Value, indent);
+                }
+                else
+                {
+                    ExecuteFileOperations(context.Telemetry, sourcePath, destinationPath, fileExists, directoryExists, preferLeft.Value, indent);
+                }
+
+                string GetPrefix(bool invert)
+                {
+                    if (invert)
+                    {
+                        if (isDirectory)
+                        {
+                            return (directoryExists) ? "D" : "X";
+                        }
+                        else
+                        {
+                            return (fileExists) ? "F" : "X";
+                        }
+                    }
+                    else
+                    {
+                        return (isDirectory) ? "D" : "F";
+                    }
+                }
+            }
+        }
+
+        private void ExecuteDirectoryOperations(
+            SearchTelemetry telemetry,
+            string sourcePath,
+            string destinationPath,
+            bool fileExists,
+            bool directoryExists,
+            bool preferLeft,
+            string indent)
+        {
+            if (preferLeft)
+            {
+                if (directoryExists)
+                {
+                    // update directory's attributes
                     WritePath(destinationPath, OperationKind.Update, indent);
                     UpdateAttributes(sourcePath, destinationPath);
                     telemetry.UpdatedCount++;
@@ -216,9 +245,14 @@ namespace Orang.CommandLine
                 {
                     if (fileExists)
                     {
+                        // create directory (overwrite existing file)
                         WritePath(destinationPath, OperationKind.Delete, indent);
                         DeleteFile(destinationPath);
                         telemetry.DeletedCount++;
+                    }
+                    else
+                    {
+                        // create directory
                     }
 
                     WritePath(destinationPath, OperationKind.Add, indent);
@@ -226,38 +260,60 @@ namespace Orang.CommandLine
                     telemetry.AddedCount++;
                 }
             }
-            else if (preferTarget)
+            else if (directoryExists)
             {
-                WritePath(sourcePath, (fileExists) ? OperationKind.Update : OperationKind.Delete, indent);
-                DeleteFile(sourcePath);
-
-                if (!fileExists)
-                    telemetry.DeletedCount++;
-
-                if (fileExists)
-                {
-                    CopyFile(destinationPath, sourcePath);
-                    telemetry.UpdatedCount++;
-                }
-                else if (directoryExists)
-                {
-                    WritePath(sourcePath, OperationKind.Add, indent);
-                    CreateDirectory(sourcePath);
-                    telemetry.AddedCount++;
-                }
+                // update directory's attributes
+                WritePath(sourcePath, OperationKind.Update, indent);
+                UpdateAttributes(destinationPath, sourcePath);
+                telemetry.UpdatedCount++;
             }
             else
             {
+                WritePath(sourcePath, OperationKind.Delete, indent);
+                DeleteDirectory(sourcePath);
+                telemetry.DeletedCount++;
+
                 if (fileExists)
                 {
+                    // copy file (and overwrite existing directory)
+                    WritePath(sourcePath, OperationKind.Add, indent);
+                    CopyFile(destinationPath, sourcePath);
+                    telemetry.AddedCount++;
+                }
+                else
+                {
+                    // delete directory
+                }
+            }
+        }
+
+        private void ExecuteFileOperations(
+            SearchTelemetry telemetry,
+            string sourcePath,
+            string destinationPath,
+            bool fileExists,
+            bool directoryExists,
+            bool preferLeft,
+            string indent)
+        {
+            if (preferLeft)
+            {
+                if (fileExists)
+                {
+                    // copy file (and overwrite existing file)
                     WritePath(destinationPath, OperationKind.Update, indent);
                     DeleteFile(destinationPath);
                 }
                 else if (directoryExists)
                 {
+                    // copy file (and overwrite existing directory)
                     WritePath(destinationPath, OperationKind.Delete, indent);
                     DeleteDirectory(destinationPath);
                     telemetry.DeletedCount++;
+                }
+                else
+                {
+                    // copy file
                 }
 
                 if (!fileExists)
@@ -274,38 +330,62 @@ namespace Orang.CommandLine
                     telemetry.AddedCount++;
                 }
             }
-
-            _destinationPaths?.Add(destinationPath);
-
-            void DeleteDirectory(string path)
+            else
             {
-                if (!DryRun)
-                    Directory.Delete(path, recursive: true);
-            }
+                WritePath(sourcePath, (fileExists) ? OperationKind.Update : OperationKind.Delete, indent);
+                DeleteFile(sourcePath);
 
-            void CreateDirectory(string path)
-            {
-                if (!DryRun)
-                    Directory.CreateDirectory(path);
-            }
+                if (!fileExists)
+                    telemetry.DeletedCount++;
 
-            void DeleteFile(string path)
-            {
-                if (!DryRun)
-                    File.Delete(path);
+                if (fileExists)
+                {
+                    // copy file (and overwrite existing file)
+                    CopyFile(destinationPath, sourcePath);
+                    telemetry.UpdatedCount++;
+                }
+                else if (directoryExists)
+                {
+                    // create directory (and overwrite existing file)
+                    WritePath(sourcePath, OperationKind.Add, indent);
+                    CreateDirectory(sourcePath);
+                    telemetry.AddedCount++;
+                }
+                else
+                {
+                    // delete file
+                }
             }
+        }
 
-            void CopyFile(string sourcePath, string destinationPath)
-            {
-                if (!DryRun)
-                    File.Copy(sourcePath, destinationPath);
-            }
+        private void DeleteDirectory(string path)
+        {
+            if (!DryRun)
+                Directory.Delete(path, recursive: true);
+        }
 
-            void UpdateAttributes(string sourcePath, string destinationPath)
-            {
-                if (!DryRun)
-                    FileSystemHelpers.UpdateAttributes(sourcePath, destinationPath);
-            }
+        private void CreateDirectory(string path)
+        {
+            if (!DryRun)
+                Directory.CreateDirectory(path);
+        }
+
+        private void DeleteFile(string path)
+        {
+            if (!DryRun)
+                File.Delete(path);
+        }
+
+        private void CopyFile(string sourcePath, string destinationPath)
+        {
+            if (!DryRun)
+                File.Copy(sourcePath, destinationPath);
+        }
+
+        private void UpdateAttributes(string sourcePath, string destinationPath)
+        {
+            if (!DryRun)
+                FileSystemHelpers.UpdateAttributes(sourcePath, destinationPath);
         }
 
         protected override void ExecuteOperation(string sourcePath, string destinationPath)

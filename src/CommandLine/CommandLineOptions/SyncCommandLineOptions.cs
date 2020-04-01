@@ -18,11 +18,12 @@ namespace Orang.CommandLine
             HelpText = "Display which files or directories should be copied/deleted but do not actually copy/delete any file or directory.")]
         public bool DryRun { get; set; }
 
-        [Option(shortName: OptionShortNames.Target, longName: OptionNames.Target,
+        //TODO: rename Right > Second
+        [Option(shortName: OptionShortNames.Right, longName: OptionNames.Right,
             Required = true,
-            HelpText = "A directory to be synchronized.",
+            HelpText = "A right directory to be synchronized.",
             MetaValue = MetaValues.DirectoryPath)]
-        public string Target { get; set; }
+        public string Right { get; set; }
 
         public bool TryParse(SyncCommandOptions options)
         {
@@ -42,17 +43,17 @@ namespace Orang.CommandLine
             if (!TryParseAsEnumFlags(Compare, OptionNames.Compare, out FileCompareOptions compareOptions, FileCompareOptions.Attributes | FileCompareOptions.Content | FileCompareOptions.ModifiedTime | FileCompareOptions.Size, OptionValueProviders.FileCompareOptionsProvider))
                 return false;
 
-            if (!TryEnsureFullPath(Target, out string target))
+            if (!TryEnsureFullPath(Right, out string rightDirectory))
                 return false;
 
-            if (!TryParseAsEnum(Conflict, OptionNames.Conflict, out SyncConflictResolution conflictResolution, defaultValue: SyncConflictResolution.SourceWins, provider: OptionValueProviders.SyncConflictResolutionProvider))
+            if (!TryParseAsEnum(Conflict, OptionNames.Conflict, out SyncConflictResolution conflictResolution, defaultValue: SyncConflictResolution.LeftWins, provider: OptionValueProviders.SyncConflictResolutionProvider))
                 return false;
 
             options.SearchTarget = SearchTarget.All;
 
             options.CompareOptions = compareOptions;
             options.DryRun = DryRun;
-            options.Target = target;
+            options.Target = rightDirectory;
             options.ConflictResolution = conflictResolution;
 
             return true;

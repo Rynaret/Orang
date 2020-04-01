@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Josef Pihrt. All rights reserved. Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -17,15 +16,13 @@ namespace Orang.CommandLine
         {
         }
 
-        public string Target => Options.Target;
+        private string Target => Options.Target;
 
         public ConflictResolution ConflictResolution
         {
             get { return Options.ConflictResolution; }
             protected set { Options.ConflictResolution = value; }
         }
-
-        protected HashSet<string> IgnoredPaths { get; set; }
 
         protected abstract void ExecuteOperation(string sourcePath, string destinationPath);
 
@@ -91,9 +88,6 @@ namespace Orang.CommandLine
 
                 destinationPath = Path.Combine(Target, fileName);
             }
-
-            if (IgnoredPaths?.Contains(sourcePath) == true)
-                return;
 
             try
             {
