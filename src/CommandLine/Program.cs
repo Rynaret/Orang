@@ -272,13 +272,7 @@ namespace Orang.CommandLine
             if (!commandLineOptions.TryParse(options))
                 return 1;
 
-            return options.SyncMode switch
-            {
-                SyncMode.Synchronize => Execute(new SyncCommand_Synchronize(options)),
-                SyncMode.Echo => Execute(new SyncCommand_Echo(options)),
-                SyncMode.Contribute => Execute(new SyncCommand_Contribute(options)),
-                _ => throw new InvalidOperationException(),
-            };
+            return Execute(new SyncCommand(options));
         }
 
         private static int Rename(RenameCommandLineOptions commandLineOptions)
