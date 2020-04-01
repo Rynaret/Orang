@@ -131,9 +131,15 @@ namespace Orang.CommandLine
         {
             _destinationPaths = new HashSet<string>(FileSystemHelpers.Comparer);
 
-            _isSourceToTarget = true;
-            base.ExecuteDirectory(directoryPath, context);
-            _isSourceToTarget = false;
+            try
+            {
+                _isSourceToTarget = true;
+                base.ExecuteDirectory(directoryPath, context);
+            }
+            finally
+            {
+                _isSourceToTarget = false;
+            }
 
             IgnoredPaths = _destinationPaths;
             _destinationPaths = null;
