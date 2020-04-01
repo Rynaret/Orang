@@ -18,11 +18,6 @@ namespace Orang.CommandLine
             HelpText = "Display which files or directories should be copied/deleted but do not actually copy/delete any file or directory.")]
         public bool DryRun { get; set; }
 
-        [Option(longName: OptionNames.SyncMode,
-            HelpText = "Synchronization mode to be used.",
-            MetaValue = MetaValues.SyncMode)]
-        public string SyncMode { get; set; }
-
         [Option(shortName: OptionShortNames.Target, longName: OptionNames.Target,
             Required = true,
             HelpText = "A directory to be synchronized.",
@@ -53,16 +48,12 @@ namespace Orang.CommandLine
             if (!TryParseAsEnum(Conflict, OptionNames.Conflict, out SyncConflictResolution conflictResolution, defaultValue: SyncConflictResolution.SourceWins, provider: OptionValueProviders.SyncConflictResolutionProvider))
                 return false;
 
-            if (!TryParseAsEnum(SyncMode, OptionNames.SyncMode, out SyncMode syncMode, defaultValue: Orang.SyncMode.Synchronize, provider: OptionValueProviders.SyncModeProvider))
-                return false;
-
             options.SearchTarget = SearchTarget.All;
 
             options.CompareOptions = compareOptions;
             options.DryRun = DryRun;
             options.Target = target;
             options.ConflictResolution = conflictResolution;
-            options.SyncMode = syncMode;
 
             return true;
         }

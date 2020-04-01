@@ -22,8 +22,6 @@ namespace Orang.CommandLine
 
         public bool DryRun => Options.DryRun;
 
-        public SyncMode SyncMode => Options.SyncMode;
-
         new public SyncConflictResolution ConflictResolution
         {
             get { return Options.ConflictResolution; }

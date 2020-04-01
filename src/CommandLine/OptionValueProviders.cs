@@ -394,12 +394,6 @@ namespace Orang.CommandLine
             SimpleOptionValue.Create(FileCompareOptions.Size, description: "Compare file size.")
         );
 
-        public static OptionValueProvider SyncModeProvider { get; } = new OptionValueProvider(MetaValues.SyncMode,
-            SimpleOptionValue.Create(SyncMode.Synchronize, description: "Compares the two folders and makes sure they have exactly the same content."),
-            SimpleOptionValue.Create(SyncMode.Echo, description: "Looks for changes in the left folder and makes the right folder match the left folder."),
-            SimpleOptionValue.Create(SyncMode.Contribute, description: "Similar to 'echo' mode, but it does not delete any files.")
-        );
-
         public static OptionValueProvider SyncConflictResolutionProvider { get; } = new OptionValueProvider(MetaValues.SyncConflictResolution,
             SimpleOptionValue.Create(SyncConflictResolution.Ask, description: ""),
             SimpleOptionValue.Create(SyncConflictResolution.SourceWins, description: ""),
