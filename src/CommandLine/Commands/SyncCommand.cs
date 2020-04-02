@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using Orang.FileSystem;
 using static Orang.CommandLine.LogHelpers;
 using static Orang.Logger;
@@ -16,6 +17,7 @@ namespace Orang.CommandLine
         private bool _isRightToLeft;
         private HashSet<string> _destinationPaths;
         private HashSet<string> _ignoredPaths;
+        private DirectoryData _directoryData;
 
         public SyncCommand(SyncCommandOptions options) : base(options)
         {
@@ -71,15 +73,16 @@ namespace Orang.CommandLine
             if (_ignoredPaths?.Contains(sourcePath) == true)
                 return;
 
+            string renamePath = null;
+
             ExecuteOperation();
 
-            _destinationPaths?.Add(destinationPath);
+            _destinationPaths?.Add(renamePath ?? destinationPath);
 
             void ExecuteOperation()
             {
                 bool fileExists = File.Exists(destinationPath);
                 bool directoryExists = !fileExists && Directory.Exists(destinationPath);
-
                 bool? preferLeft = null;
 
                 if (isDirectory)
@@ -117,22 +120,49 @@ namespace Orang.CommandLine
                 if (preferLeft == null)
                 {
                     if (!_isRightToLeft
-                        && !isDirectory
-                        && fileExists
-                        && Options.CompareOptions != FileCompareOptions.None
-                        && FileSystemHelpers.FileEquals(sourcePath, destinationPath, Options.CompareOptions))
+                        && !isDirectory)
                     {
-                        return;
+                        if (fileExists)
+                        {
+                            if (Options.CompareOptions != FileCompareOptions.None
+                                && FileSystemHelpers.FileEquals(sourcePath, destinationPath, Options.CompareOptions))
+                            {
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            if (_directoryData == null)
+                            {
+                                _directoryData = new DirectoryData();
+                                _directoryData.Load(Path.GetDirectoryName(destinationPath));
+                            }
+                            else if (!FileSystemHelpers.IsParentDirectory(_directoryData.Path, destinationPath))
+                            {
+                                _directoryData.Load(Path.GetDirectoryName(destinationPath));
+                            }
+
+                            renamePath = _directoryData.FindRenamedFile(sourcePath);
+                        }
                     }
 
                     if (ConflictResolution == SyncConflictResolution.Ask)
                     {
-                        string leftPrefix = GetPrefix(invert: _isRightToLeft);
-                        string rightPrefix = GetPrefix(invert: !_isRightToLeft);
+                        if (renamePath != null)
+                        {
+                            WritePathPrefix(sourcePath, "FIL", default, indent);
+                            WritePathPrefix(renamePath, "FIL", default, indent);
+                        }
+                        else
+                        {
+                            string leftPrefix = GetPrefix(invert: _isRightToLeft);
+                            string rightPrefix = GetPrefix(invert: !_isRightToLeft);
 
-                        WritePathPrefix((_isRightToLeft) ? destinationPath : sourcePath, leftPrefix, default, indent);
-                        WritePathPrefix((_isRightToLeft) ? sourcePath : destinationPath, rightPrefix, default, indent);
+                            WritePathPrefix((_isRightToLeft) ? destinationPath : sourcePath, leftPrefix, default, indent);
+                            WritePathPrefix((_isRightToLeft) ? sourcePath : destinationPath, rightPrefix, default, indent);
+                        }
 
+                        //TODO: 
                         DialogResult dialogResult = ConsoleHelpers.Ask("Prefer left directory?", indent);
 
                         switch (dialogResult)
@@ -197,6 +227,10 @@ namespace Orang.CommandLine
                 {
                     ExecuteDirectoryOperations(context.Telemetry, sourcePath, destinationPath, fileExists, directoryExists, preferLeft.Value, indent);
                 }
+                else if (renamePath != null)
+                {
+                    RenameFile(context.Telemetry, (preferLeft.Value) ? sourcePath : renamePath, (preferLeft.Value) ? renamePath : sourcePath, indent);
+                }
                 else
                 {
                     ExecuteFileOperations(context.Telemetry, sourcePath, destinationPath, fileExists, directoryExists, preferLeft.Value, indent);
@@ -208,16 +242,16 @@ namespace Orang.CommandLine
                     {
                         if (isDirectory)
                         {
-                            return (directoryExists) ? "D" : "X";
+                            return (directoryExists) ? "DIR" : "---";
                         }
                         else
                         {
-                            return (fileExists) ? "F" : "X";
+                            return (fileExists) ? "FIL" : "---";
                         }
                     }
                     else
                     {
-                        return (isDirectory) ? "D" : "F";
+                        return (isDirectory) ? "DIR" : "FIL";
                     }
                 }
             }
@@ -358,6 +392,19 @@ namespace Orang.CommandLine
             }
         }
 
+        private void RenameFile(SearchTelemetry telemetry, string sourcePath, string destinationPath, string indent)
+        {
+            //TODO: File.Exists(renamePath) ?
+            string renamePath = Path.Combine(Path.GetDirectoryName(destinationPath), Path.GetFileName(sourcePath));
+
+            WritePath(destinationPath, OperationKind.Rename, indent);
+            WritePath(renamePath, OperationKind.None, indent);
+            DeleteFile(destinationPath);
+            CopyFile(sourcePath, renamePath);
+
+            telemetry.RenamedCount++;
+        }
+
         private void DeleteDirectory(string path)
         {
             if (!DryRun)
@@ -407,10 +454,7 @@ namespace Orang.CommandLine
             {
                 case OperationKind.None:
                     {
-                        Debug.Fail("");
-
-                        LogHelpers.WritePath(path, indent: indent, verbosity: Verbosity.Minimal);
-                        WriteLine(Verbosity.Minimal);
+                        WritePathPrefix(path, "   ", default, indent);
                         break;
                     }
                 case OperationKind.Add:
@@ -426,6 +470,11 @@ namespace Orang.CommandLine
                 case OperationKind.Delete:
                     {
                         WritePathPrefix(path, "DEL", Colors.Sync_Delete, indent);
+                        break;
+                    }
+                case OperationKind.Rename:
+                    {
+                        WritePathPrefix(path, "REN", Colors.Sync_Rename, indent);
                         break;
                     }
                 default:
@@ -467,6 +516,8 @@ namespace Orang.CommandLine
             Write("  ", verbosity);
             WriteCount("Updated", telemetry.UpdatedCount, colors, verbosity: verbosity);
             Write("  ", verbosity);
+            WriteCount("Renamed", telemetry.RenamedCount, colors, verbosity: verbosity);
+            Write("  ", verbosity);
             WriteCount("Deleted", telemetry.DeletedCount, colors, verbosity: verbosity);
             Write("  ", verbosity);
             WriteLine(verbosity);
@@ -477,7 +528,98 @@ namespace Orang.CommandLine
             None,
             Add,
             Update,
-            Delete
+            Rename,
+            Delete,
+        }
+
+        [DebuggerDisplay("{DebuggerDisplay,nq}")]
+        private class DirectoryData
+        {
+            public string Path { get; private set; }
+
+            public List<FileData> Files { get; } = new List<FileData>();
+
+            [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+            private string DebuggerDisplay => $"{Path}  Files = {Files.Count}";
+
+            public void Load(string path)
+            {
+                Path = path;
+
+                Files.Clear();
+                Files.AddRange(Directory.EnumerateFiles(path).Select(f => new FileData(f, File.GetLastWriteTimeUtc(f))));
+            }
+
+            public string FindRenamedFile(string filePath)
+            {
+                string renameFile = null;
+
+                DateTime modifiedTime = File.GetLastWriteTimeUtc(filePath);
+
+                long size = -1;
+
+                FileStream fs = null;
+
+                try
+                {
+                    foreach (FileData fileData in Files)
+                    {
+                        if (modifiedTime == fileData.ModifiedTime)
+                        {
+                            if (size == -1)
+                            {
+                                fs = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+
+                                size = fs.Length;
+                            }
+
+                            using (var fs2 = new FileStream(fileData.Path, FileMode.Open, FileAccess.Read))
+                            {
+                                if (fs!.Length == fs2.Length)
+                                {
+                                    if (fs.Position != 0)
+                                        fs.Position = 0;
+
+                                    if (StreamComparer.Default.ByteEquals(fs, fs2))
+                                    {
+                                        if (renameFile == null)
+                                        {
+                                            renameFile = fileData.Path;
+                                        }
+                                        else
+                                        {
+                                            return null;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                finally
+                {
+                    fs?.Dispose();
+                }
+
+                return renameFile;
+            }
+        }
+
+        [DebuggerDisplay("{DebuggerDisplay,nq}")]
+        private readonly struct FileData
+        {
+            public FileData(string path, DateTime modifiedTime)
+            {
+                Path = path;
+                ModifiedTime = modifiedTime;
+            }
+
+            public string Path { get; }
+
+            public DateTime ModifiedTime { get; }
+
+            [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+            private string DebuggerDisplay => $"{ModifiedTime}  {Path}";
         }
     }
 }

@@ -21,7 +21,7 @@ namespace Orang.CommandLine
         //TODO: rename Right > Second
         [Option(shortName: OptionShortNames.Right, longName: OptionNames.Right,
             Required = true,
-            HelpText = "A right directory to be synchronized.",
+            HelpText = "A right (second) directory to be synchronized with the left (first) directory.",
             MetaValue = MetaValues.DirectoryPath)]
         public string Right { get; set; }
 

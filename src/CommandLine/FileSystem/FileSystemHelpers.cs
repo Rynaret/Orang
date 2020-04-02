@@ -113,6 +113,14 @@ namespace Orang.FileSystem
                 && path.StartsWith(basePath, Comparison);
         }
 
+        internal static bool IsParentDirectory(string directoryPath, string path)
+        {
+            return path.Length > directoryPath.Length
+                && IsDirectorySeparator(path[directoryPath.Length])
+                && directoryPath.Length == LastIndexOfDirectorySeparator(path)
+                && path.StartsWith(directoryPath, Comparison);
+        }
+
         internal static bool UpdateAttributes(string sourcePath, string destinationPath)
         {
             FileAttributes sourceAttributes = File.GetAttributes(sourcePath);
@@ -136,6 +144,17 @@ namespace Orang.FileSystem
             }
 
             return path.Length;
+        }
+
+        internal static int LastIndexOfDirectorySeparator(string path)
+        {
+            for (int i = path.Length - 1; i >= 0; i--)
+            {
+                if (IsDirectorySeparator(path[i]))
+                    return i;
+            }
+
+            return -1;
         }
 
         public static void Delete(

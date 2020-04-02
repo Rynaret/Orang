@@ -40,6 +40,8 @@ namespace Orang.CommandLine
 
         public int AddedCount { get; internal set; }
 
+        public int RenamedCount { get; internal set; }
+
         public int DeletedCount { get; internal set; }
     }
 }
