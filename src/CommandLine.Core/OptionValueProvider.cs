@@ -4,7 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace Orang
 {
@@ -29,6 +31,35 @@ namespace Orang
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private string DebuggerDisplay => Name;
+
+        public OptionValueProvider WithoutValues(string name, params OptionValue[] values)
+        {
+            ImmutableArray<OptionValue>.Builder builder = ImmutableArray.CreateBuilder<OptionValue>();
+
+            foreach (OptionValue value in Values)
+            {
+                if (Array.IndexOf(values, value) == -1)
+                {
+                    builder.Add(value);
+                }
+                else
+                {
+                }
+            }
+
+            return new OptionValueProvider(name, builder);
+        }
+
+        public bool ContainsName(string name)
+        {
+            foreach (OptionValue value in Values)
+            {
+                if (string.Equals(value.Name, name, StringComparison.Ordinal))
+                    return true;
+            }
+
+            return false;
+        }
 
         public bool TryParseEnum<TEnum>(string value, out TEnum result) where TEnum : struct
         {
@@ -59,13 +90,32 @@ namespace Orang
             return default;
         }
 
-        public string GetHelpText(Func<OptionValue, bool> predicate = null)
+        public string GetHelpText(Func<OptionValue, bool> predicate = null, bool multiline = false)
         {
-            IEnumerable<string> values = (predicate != null)
-                ? Values.Where(predicate).Select(f => f.HelpValue)
-                : Values.Select(f => f.HelpValue);
+            if (multiline)
+            {
+                IEnumerable<OptionValue> optionValues = (predicate != null)
+                    ? Values.Where(predicate)
+                    : Values;
 
-            return TextHelpers.Join(", ", " and ", values);
+                StringBuilder sb = StringBuilderCache.GetInstance();
+                using (var stringWriter = new StringWriter(sb))
+                {
+                    var helpWriter = new HelpWriter(stringWriter);
+
+                    helpWriter.WriteValues(optionValues);
+
+                    return StringBuilderCache.GetStringAndFree(sb);
+                }
+            }
+            else
+            {
+                IEnumerable<string> values = (predicate != null)
+                    ? Values.Where(predicate).Select(f => f.HelpValue)
+                    : Values.Select(f => f.HelpValue);
+
+                return TextHelpers.Join(", ", " and ", values);
+            }
         }
     }
 }
