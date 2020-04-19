@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using System.Threading;
 using static Orang.Logger;
 
@@ -48,7 +47,7 @@ namespace Orang.CommandLine
                 if (command == null)
                     throw new ArgumentException($"Command '{commandName}' does not exist.", nameof(commandName));
 
-                WriteHelp(command, includeValues: includeValues, filter: filter);
+                WriteCommandHelp(command, includeValues: includeValues, filter: filter);
             }
             else if (manual)
             {
@@ -56,45 +55,60 @@ namespace Orang.CommandLine
             }
             else
             {
-                WriteHelp(includeValues: includeValues, filter: filter);
+                WriteCommandsHelp(includeValues: includeValues, filter: filter);
             }
         }
 
-        public static void WriteHelp(Command command = null, bool includeValues = false, Filter filter = null)
+        public static void WriteCommandHelp(Command command, bool includeValues = false, Filter filter = null)
         {
-            if (command != null)
+            var helpWriter = new ConsoleHelpWriter(new HelpWriterOptions(filter: filter));
+
+            command = command.WithOptions(command.Options.Sort(CompareOptions));
+
+            CommandHelp commandHelp = CommandHelp.Create(command, OptionValueProviders.Providers, filter: filter);
+
+            helpWriter.WriteCommand(commandHelp);
+
+            if (includeValues)
             {
-                var helpWriter = new CommandHelpWriter(
-                    new HelpWriterOptions(includeValues: includeValues, filter: filter),
-                    OptionValueProviders.ProvidersByName);
-
-                command = command.WithOptions(command.Options.Sort(CompareOptions));
-
-                CommandHelp commandHelp = CommandHelp.Create(command, OptionValueProviders.ProvidersByName.Select(f => f.Value), filter: filter);
-
-                helpWriter.WriteCommand(commandHelp);
+                helpWriter.WriteValues(commandHelp.Values);
             }
             else
             {
-                IEnumerable<Command> commands = LoadCommands();
+                IEnumerable<string> metaValues = OptionValueProviders.GetProviders(commandHelp.Options.Select(f => f.Option), OptionValueProviders.Providers).Select(f => f.Name);
 
-                CommandsHelp commandsHelp = CommandsHelp.Create(commands, OptionValueProviders.ProvidersByName.Select(f => f.Value), filter: filter);
-
-                var helpWriter = new CommandHelpWriter(
-                    new HelpWriterOptions(includeValues: includeValues, filter: filter),
-                    OptionValueProviders.ProvidersByName);
-
-                helpWriter.WriteCommands(commandsHelp);
+                if (metaValues.Any())
+                {
+                    WriteLine();
+                    Write($"Run 'orang help {command.Name} -v d' to display list of allowed values for ");
+                    Write(TextHelpers.Join(", ", " and ", metaValues));
+                    WriteLine(".");
+                }
             }
+        }
+
+        public static void WriteCommandsHelp(bool includeValues = false, Filter filter = null)
+        {
+            IEnumerable<Command> commands = LoadCommands();
+
+            CommandsHelp commandsHelp = CommandsHelp.Create(commands, OptionValueProviders.Providers, filter: filter);
+
+            var helpWriter = new ConsoleHelpWriter(new HelpWriterOptions(filter: filter));
+
+            helpWriter.WriteCommands(commandsHelp);
+
+            if (includeValues)
+                helpWriter.WriteValues(commandsHelp.Values);
+
+            WriteLine();
+            WriteLine(GetFooterText());
         }
 
         private static void WriteManual(bool includeValues = false, Filter filter = null)
         {
             IEnumerable<Command> commands = LoadCommands();
 
-            var helpWriter = new ManualHelpWriter(
-                new HelpWriterOptions(includeValues: false, filter: filter),
-                OptionValueProviders.ProvidersByName);
+            var helpWriter = new ConsoleHelpWriter(new HelpWriterOptions(filter: filter));
 
             IEnumerable<CommandHelp> commandHelps = commands.Select(f => CommandHelp.Create(f, filter: filter))
                 .Where(f => f.Arguments.Any() || f.Options.Any())
@@ -102,38 +116,48 @@ namespace Orang.CommandLine
 
             ImmutableArray<CommandShortHelp> commandShortHelps = HelpProvider.GetCommandShortHelp(commandHelps.Select(f => f.Command));
 
-            ImmutableArray<OptionValuesHelp> values = HelpProvider.GetOptionValuesHelp(commandHelps.SelectMany(f => f.Command.Options), OptionValueProviders.ProvidersByName.Select(f => f.Value), filter);
+            ImmutableArray<OptionValuesHelp> values = ImmutableArray<OptionValuesHelp>.Empty;
 
-            ImmutableArray<string> expressions = HelpProvider.GetExpressionsLines(values);
-
-            var commandsHelp = new CommandsHelp(commandShortHelps, values, expressions);
-
-            helpWriter.WriteCommands(commandsHelp);
-
-            foreach (CommandHelp commandHelp in commandHelps)
+            if (commandShortHelps.Any())
             {
-                WriteSeparator();
-                WriteLine();
-                WriteLine($"Command: {commandHelp.Name}");
-                WriteLine();
+                values = HelpProvider.GetOptionValuesHelp(commandHelps.SelectMany(f => f.Command.Options), OptionValueProviders.Providers, filter);
 
-                string description = commandHelp.Description;
+                var commandsHelp = new CommandsHelp(commandShortHelps, values);
 
-                if (!string.IsNullOrEmpty(description))
+                helpWriter.WriteCommands(commandsHelp);
+
+                foreach (CommandHelp commandHelp in commandHelps)
                 {
-                    WriteLine(description);
+                    WriteSeparator();
                     WriteLine();
+                    WriteLine($"Command: {commandHelp.Name}");
+                    WriteLine();
+
+                    string description = commandHelp.Description;
+
+                    if (!string.IsNullOrEmpty(description))
+                    {
+                        WriteLine(description);
+                        WriteLine();
+                    }
+
+                    helpWriter.WriteCommand(commandHelp);
                 }
 
-                helpWriter.WriteCommand(commandHelp);
+                if (includeValues)
+                    WriteSeparator();
+            }
+            else
+            {
+                WriteLine();
+                WriteLine("No command found");
+
+                if (includeValues)
+                    values = HelpProvider.GetOptionValuesHelp(commands.Select(f => CommandHelp.Create(f)).SelectMany(f => f.Command.Options), OptionValueProviders.Providers, filter);
             }
 
             if (includeValues)
-            {
-                WriteSeparator();
-
-                helpWriter.WriteValues(commandsHelp.Values, commandsHelp.Expressions);
-            }
+                helpWriter.WriteValues(values);
 
             static void WriteSeparator()
             {
@@ -162,151 +186,6 @@ namespace Orang.CommandLine
             return $"Run 'orang help {command ?? "[command]"}' for more information on a command."
                 + Environment.NewLine
                 + $"Run 'orang help {command ?? "[command]"} -v d' for more information on allowed values.";
-        }
-
-        private class ManualHelpWriter : HelpWriter
-        {
-            private ContentWriterOptions _contentWriterOptions;
-
-            public ManualHelpWriter(
-                HelpWriterOptions options = null,
-                ImmutableDictionary<string, OptionValueProvider> optionValueProviders = null) : base(options, optionValueProviders?.Select(f => f.Value))
-            {
-            }
-
-            public Filter Filter => Options.Filter;
-
-            internal ContentWriterOptions ContentWriterOptions
-            {
-                get
-                {
-                    if (_contentWriterOptions == null
-                        && Filter != null)
-                    {
-                        _contentWriterOptions = new ContentWriterOptions(
-                            format: new OutputDisplayFormat(ContentDisplayStyle.AllLines),
-                            (Filter.GroupNumber >= 0) ? new GroupDefinition(Filter.GroupNumber, Filter.GroupName) : default,
-                            indent: "");
-                    }
-
-                    return _contentWriterOptions;
-                }
-            }
-
-            public override void WriteCommands(CommandsHelp commands)
-            {
-                WriteLine(GetHeadingText());
-                WriteLine("Usage: orang [command] [arguments]");
-                WriteLine();
-
-                base.WriteCommands(commands);
-            }
-
-            public override void WriteStartCommand(CommandHelp command)
-            {
-                Write("Usage: orang ");
-                Write(command.Name);
-
-                foreach (ArgumentHelp argument in command.Arguments)
-                {
-                    Write(" ");
-
-                    if (!argument.IsRequired)
-                        Write("[");
-
-                    Write(argument.Name);
-
-                    if (!argument.IsRequired)
-                        Write("]");
-                }
-
-                if (command.Options.Any())
-                    Write(" [options]");
-
-                WriteLine();
-            }
-
-            protected override void Write(char value)
-            {
-                ConsoleOut.Write(value);
-            }
-
-            protected override void Write(string value)
-            {
-                ConsoleOut.Write(value);
-            }
-
-            protected override void WriteLine()
-            {
-                ConsoleOut.WriteLine();
-            }
-
-            protected override void WriteLine(string value)
-            {
-                ConsoleOut.WriteLine(value);
-            }
-
-            protected override void WriteTextLine(string value)
-            {
-                if (Filter != null)
-                {
-                    Match match = Filter.Match(value);
-
-                    if (match != null)
-                    {
-                        List<Capture> captures = ListCache<Capture>.GetInstance();
-
-                        CaptureFactory.GetCaptures(ref captures, match, Filter.GroupNumber);
-
-                        var writer = new AllLinesContentWriter(value, ContentTextWriter.Default, ContentWriterOptions);
-
-                        writer.WriteMatches(captures);
-
-                        ListCache<Capture>.Free(captures);
-                        return;
-                    }
-                }
-
-                ConsoleOut.WriteLine(value);
-            }
-        }
-
-        private class CommandHelpWriter : ManualHelpWriter
-        {
-            public CommandHelpWriter(
-                HelpWriterOptions options = null,
-                ImmutableDictionary<string, OptionValueProvider> optionValueProviders = null) : base(options, optionValueProviders)
-            {
-            }
-
-            public override void WriteEndOptions(CommandHelp command)
-            {
-                if (Options.IncludeValues)
-                {
-                    WriteValues(command.Values, command.Expressions);
-                }
-                else
-                {
-                    IEnumerable<string> metaValues = CommandLine.OptionValueProviders.GetProviders(command.Options.Select(f => f.Option), OptionValueProviders).Select(f => f.Name);
-
-                    if (metaValues.Any())
-                    {
-                        WriteLine();
-                        Write($"Run 'orang help {command.Name} -v d' to display list of allowed values for ");
-                        Write(TextHelpers.Join(", ", " and ", metaValues));
-                        WriteLine(".");
-                    }
-                }
-            }
-
-            public override void WriteEndCommands(CommandsHelp commands)
-            {
-                if (Options.IncludeValues)
-                    WriteValues(commands.Values, commands.Expressions);
-
-                WriteLine();
-                WriteLine(GetFooterText());
-            }
         }
     }
 }

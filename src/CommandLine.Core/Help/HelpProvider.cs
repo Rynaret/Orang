@@ -12,6 +12,9 @@ namespace Orang
     {
         public static ImmutableArray<CommandShortHelp> GetCommandShortHelp(IEnumerable<Command> commands, Filter filter = null)
         {
+            if (!commands.Any())
+                return ImmutableArray<CommandShortHelp>.Empty;
+
             int width = commands.Max(f => f.Name.Length) + 1;
 
             ImmutableArray<CommandShortHelp>.Builder builder = ImmutableArray.CreateBuilder<CommandShortHelp>();
@@ -239,7 +242,7 @@ namespace Orang
             return builder.ToImmutableArray();
         }
 
-        public static ImmutableArray<string> GetExpressionsLines(ImmutableArray<OptionValuesHelp> values, bool includeDate = true)
+        public static ImmutableArray<string> GetExpressionsLines(IEnumerable<OptionValuesHelp> values, bool includeDate = true)
         {
             return (values.SelectMany(f => f.Values).Any(f => f.Value.CanContainExpression))
                 ? GetExpressionsLines(includeDate: includeDate)
