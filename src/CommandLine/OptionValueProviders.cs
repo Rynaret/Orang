@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using Orang.CommandLine.Help;
 using Orang.FileSystem;
 using Orang.Syntax;
 
@@ -90,6 +91,10 @@ namespace Orang.CommandLine
             SimpleOptionValue.Create(ReplacementOptions.FromFile, description: "Load replacement string from a file whose path is specified in <REPLACEMENT> value."),
             SimpleOptionValue.Create(ReplacementOptions.Literal, description: "Replacement should be treated as a literal expression and not as a replacement expression."),
             SimpleOptionValue.Create(ReplacementOptions.CharacterEscapes, shortValue: "ce", helpValue: "c[haracter-]e[scapes]", description: @"Interpret literals \a, \b, \f, \n, \r, \t and \v as character escapes.")
+        );
+
+        public static OptionValueProvider InputOptionsProvider { get; } = new OptionValueProvider(MetaValues.InputOptions,
+            SimpleOptionValue.Create(InputOptions.CharacterEscapes, shortValue: "ce", helpValue: "c[haracter-]e[scapes]", description: @"Interpret literals \a, \b, \f, \n, \r, \t and \v as character escapes.")
         );
 
         public static OptionValueProvider VerbosityProvider { get; } = new OptionValueProvider(MetaValues.Verbosity,
@@ -428,7 +433,7 @@ namespace Orang.CommandLine
 
                 (int width1, int width2) = HelpProvider.CalculateOptionValuesWidths(optionValues);
 
-                ImmutableArray<OptionValueHelp>.Enumerator en = HelpProvider.GetOptionValueHelp(optionValues, width1, width2).GetEnumerator();
+                ImmutableArray<OptionValueItem>.Enumerator en = HelpProvider.GetOptionValueItems(optionValues, width1, width2).GetEnumerator();
 
                 if (en.MoveNext())
                 {

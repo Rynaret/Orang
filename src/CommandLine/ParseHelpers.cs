@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Orang.CommandLine.Help;
 using Orang.Expressions;
 using Orang.FileSystem;
 using static Orang.Logger;
@@ -635,6 +636,24 @@ namespace Orang.CommandLine
 
             if ((options & ReplacementOptions.CharacterEscapes) != 0)
                 replacement = RegexEscape.ConvertCharacterEscapes(replacement);
+
+            return true;
+        }
+
+        public static bool TryParseInput(
+            IEnumerable<string> values,
+            out string input)
+        {
+            if (!values.Any())
+                throw new InvalidOperationException("Input is missing.");
+
+            input = values.First();
+
+            if (!TryParseAsEnumFlags(values.Skip(1), OptionNames.Input, out InputOptions options, InputOptions.None, OptionValueProviders.InputOptionsProvider))
+                return false;
+
+            if ((options & InputOptions.CharacterEscapes) != 0)
+                input = RegexEscape.ConvertCharacterEscapes(input);
 
             return true;
         }
