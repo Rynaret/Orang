@@ -24,9 +24,9 @@ namespace Orang.CommandLine
             out FilePropertyFilter filter)
         {
             filter = null;
-            FilterPredicate<long> sizePredicate = null;
-            FilterPredicate<DateTime> creationTimePredicate = null;
-            FilterPredicate<DateTime> modifiedTimePredicate = null;
+            Func<long, bool> sizePredicate = null;
+            Func<DateTime, bool> creationTimePredicate = null;
+            Func<DateTime, bool> modifiedTimePredicate = null;
 
             foreach (string value in values)
             {
@@ -47,19 +47,19 @@ namespace Orang.CommandLine
                             return false;
                         }
 
-                        sizePredicate = new FilterPredicate<long>(expression, PredicateHelpers.GetLongPredicate(expression));
+                        sizePredicate = PredicateHelpers.GetLongPredicate(expression);
                     }
                     else if (OptionValues.FileProperty_CreationTime.IsKeyOrShortKey(expression.Identifier))
                     {
                         optionValue = OptionValues.FileProperty_CreationTime;
 
-                        creationTimePredicate = new FilterPredicate<DateTime>(expression, PredicateHelpers.GetDateTimePredicate(expression));
+                        creationTimePredicate = PredicateHelpers.GetDateTimePredicate(expression);
                     }
                     else if (OptionValues.FileProperty_ModifiedTime.IsKeyOrShortKey(expression.Identifier))
                     {
                         optionValue = OptionValues.FileProperty_ModifiedTime;
 
-                        modifiedTimePredicate = new FilterPredicate<DateTime>(expression, PredicateHelpers.GetDateTimePredicate(expression));
+                        modifiedTimePredicate = PredicateHelpers.GetDateTimePredicate(expression);
                     }
                     else
                     {
@@ -801,11 +801,10 @@ namespace Orang.CommandLine
             return TryParseEncoding(name, out encoding, defaultEncoding);
         }
 
-        public static bool TryParseMaxCount(IEnumerable<string> values, out int maxCount, out int maxMatches, out int maxMatchingFiles)
+        public static bool TryParseMaxCount(IEnumerable<string> values, out int maxMatchingFiles, out int maxMatchesInFile)
         {
-            maxCount = 0;
-            maxMatches = 0;
             maxMatchingFiles = 0;
+            maxMatchesInFile = 0;
 
             if (!values.Any())
                 return true;
@@ -821,12 +820,7 @@ namespace Orang.CommandLine
 
                     if (OptionValues.MaxMatches.IsKeyOrShortKey(key))
                     {
-                        if (!TryParseCount(value2, out maxMatches, value))
-                            return false;
-                    }
-                    else if (OptionValues.MaxMatchingFiles.IsKeyOrShortKey(key))
-                    {
-                        if (!TryParseCount(value2, out maxMatchingFiles, value))
+                        if (!TryParseCount(value2, out maxMatchesInFile, value))
                             return false;
                     }
                     else
@@ -835,7 +829,7 @@ namespace Orang.CommandLine
                         return false;
                     }
                 }
-                else if (!TryParseCount(value, out maxCount))
+                else if (!TryParseCount(value, out maxMatchingFiles))
                 {
                     return false;
                 }
