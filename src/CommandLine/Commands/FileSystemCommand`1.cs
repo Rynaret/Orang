@@ -20,29 +20,46 @@ namespace Orang.CommandLine
         {
         }
 
-        private FileSystemFinderOptions _finderOptions;
+        private FileSystemFilterOptions _filterOptions;
 
-        protected FileSystemFinderOptions FinderOptions => _finderOptions ?? (_finderOptions = CreateFinderOptions());
+        private FileSystemFilter _filter;
+
+        protected FileSystemFilterOptions FilterOptions => _filterOptions ?? (_filterOptions = CreateFilterOptions());
+
+        protected FileSystemFilter Filter => _filter ?? (_filter = CreateFilter());
 
         protected virtual bool CanDisplaySummary => true;
 
         public virtual bool CanEndProgress => !Options.OmitPath;
 
-        protected virtual FileSystemFinderOptions CreateFinderOptions()
+        protected virtual FileSystemFilterOptions CreateFilterOptions()
         {
-            return new FileSystemFinderOptions(
+            return new FileSystemFilterOptions(
                 searchTarget: Options.SearchTarget,
                 recurseSubdirectories: Options.RecurseSubdirectories,
+                encoding: Options.DefaultEncoding);
+        }
+
+        protected virtual FileSystemFilter CreateFilter()
+        {
+            return new FileSystemFilter(
+                namePart: Options.NamePart,
+                nameFilter: Options.NameFilter,
+                extensionFilter: Options.ExtensionFilter,
+                contentFilter: Options.ContentFilter,
+                directoryNamePart: Options.DirectoryNamePart,
+                directoryFilter: Options.DirectoryFilter,
+                propertyFilter: Options.FilePropertyFilter,
                 attributes: Options.Attributes,
                 attributesToSkip: Options.AttributesToSkip,
-                empty: Options.Empty);
+                emptyFilter: Options.EmptyFilter);
         }
 
         protected abstract void ExecuteDirectory(string directoryPath, SearchContext context);
 
         protected abstract void ExecuteFile(string filePath, SearchContext context);
 
-        protected abstract void ExecuteResult(FileSystemFinderResult result, SearchContext context, string baseDirectoryPath, ColumnWidths columnWidths);
+        protected abstract void ExecuteMatch(FileMatch fileMatch, SearchContext context, string baseDirectoryPath, ColumnWidths columnWidths);
 
         protected abstract void ExecuteResult(SearchResult result, SearchContext context, ColumnWidths columnWidths);
 
@@ -96,11 +113,11 @@ namespace Orang.CommandLine
             {
                 if (consoleReportMode == ProgressReportMode.None)
                 {
-                    return (ShouldWriteSummary()) ? new ProgressReporter() : null;
+                    return (ShouldWriteSummary()) ? new ProgressReporter(GetPathIndent()) : null;
                 }
                 else if (consoleReportMode == ProgressReportMode.Dot)
                 {
-                    return new DotProgressReporter();
+                    return new DotProgressReporter(GetPathIndent());
                 }
             }
 
@@ -151,7 +168,7 @@ namespace Orang.CommandLine
                 if (context.Progress != null)
                 {
                     context.Telemetry.SearchedDirectoryCount = context.Progress.SearchedDirectoryCount;
-                    context.Telemetry.FileCount += context.Progress.FileCount;
+                    context.Telemetry.FileCount = context.Progress.FileCount;
                     context.Telemetry.DirectoryCount = context.Progress.DirectoryCount;
                 }
 
@@ -328,9 +345,9 @@ namespace Orang.CommandLine
             }
         }
 
-        protected void ExecuteOrAddResult(FileSystemFinderResult result, SearchContext context, string baseDirectoryPath)
+        protected void ExecuteOrAddMatch(FileMatch fileMatch, SearchContext context, string baseDirectoryPath)
         {
-            if (result.IsDirectory)
+            if (fileMatch.IsDirectory)
             {
                 context.Telemetry.MatchingDirectoryCount++;
             }
@@ -339,92 +356,50 @@ namespace Orang.CommandLine
                 context.Telemetry.MatchingFileCount++;
             }
 
-            if (Options.MaxMatchingFiles == context.Telemetry.MatchingFileCount + context.Telemetry.MatchingDirectoryCount)
+            if (Options.MaxMatchingFiles == context.Telemetry.MatchingFileDirectoryCount)
                 context.TerminationReason = TerminationReason.MaxReached;
 
             if (context.Results != null)
             {
-                context.AddResult(result, baseDirectoryPath);
+                context.AddResult(fileMatch, baseDirectoryPath);
             }
             else
             {
                 EndProgress(context);
 
-                ExecuteResult(result, context, baseDirectoryPath, columnWidths: null);
+                ExecuteMatch(fileMatch, context, baseDirectoryPath, columnWidths: null);
             }
         }
 
-        protected string ReadFile(
-            string filePath,
-            string basePath,
-            Encoding encoding,
-            SearchContext context,
-            string indent = null)
-        {
-            try
-            {
-                using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-                using (var reader = new StreamReader(stream, encoding, detectEncodingFromByteOrderMarks: true))
-                {
-                    return reader.ReadToEnd();
-                }
-            }
-            catch (Exception ex) when (ex is IOException
-                || ex is UnauthorizedAccessException)
-            {
-                EndProgress(context);
-                LogHelpers.WriteFileError(ex, filePath, basePath, relativePath: Options.DisplayRelativePath, indent: indent);
-                return null;
-            }
-        }
-
-        protected IEnumerable<FileSystemFinderResult> Find(
+        protected IEnumerable<FileMatch> GetMatches(
             string directoryPath,
             SearchContext context)
         {
-            return Find(
+            return GetMatches(
                 directoryPath: directoryPath,
                 context: context,
                 notifyDirectoryChanged: default(INotifyDirectoryChanged));
         }
 
-        protected IEnumerable<FileSystemFinderResult> Find(
+        protected IEnumerable<FileMatch> GetMatches(
             string directoryPath,
             SearchContext context,
             INotifyDirectoryChanged notifyDirectoryChanged)
         {
-            IEnumerable<FileSystemFinderResult> results = FileSystemFinder.Find(
+            return Filter.Matches(
                 directoryPath: directoryPath,
-                nameFilter: Options.NameFilter,
-                extensionFilter: Options.ExtensionFilter,
-                directoryFilter: Options.DirectoryFilter,
-                options: FinderOptions,
+                options: FilterOptions,
                 progress: context.Progress,
                 notifyDirectoryChanged: notifyDirectoryChanged,
                 cancellationToken: context.CancellationToken);
-
-            if (Options.FilePropertyFilter != null)
-                results = results.Where(Options.FilePropertyFilter.IsMatch);
-
-            return results;
         }
 
-        protected FileSystemFinderResult MatchFile(string filePath, ProgressReporter progress = null)
+        protected FileMatch MatchFile(string filePath, ProgressReporter progress)
         {
-            FileSystemFinderResult result = FileSystemFinder.MatchFile(
+            return Filter.MatchFile(
                 filePath,
-                nameFilter: Options.NameFilter,
-                extensionFilter: Options.ExtensionFilter,
-                options: FinderOptions,
+                options: FilterOptions,
                 progress: progress);
-
-            if (result != null
-                && Options.FilePropertyFilter?.IsMatch(result) == false)
-            {
-                return null;
-            }
-
-            return result;
         }
 
         protected string GetPathIndent(string baseDirectoryPath)
@@ -439,29 +414,29 @@ namespace Orang.CommandLine
                 : "";
         }
 
-        protected virtual void WritePath(SearchContext context, FileSystemFinderResult result, string baseDirectoryPath, string indent, ColumnWidths columnWidths)
+        protected virtual void WritePath(SearchContext context, FileMatch fileMatch, string baseDirectoryPath, string indent, ColumnWidths columnWidths)
         {
-            WritePath(context, result, baseDirectoryPath, indent, columnWidths, Colors.Match);
+            WritePath(context, fileMatch, baseDirectoryPath, indent, columnWidths, Colors.Match);
 
             WriteLine(Verbosity.Minimal);
         }
 
-        protected void WritePath(SearchContext context, FileSystemFinderResult result, string baseDirectoryPath, string indent, ColumnWidths columnWidths, ConsoleColors matchColors)
+        protected void WritePath(SearchContext context, FileMatch fileMatch, string baseDirectoryPath, string indent, ColumnWidths columnWidths, ConsoleColors matchColors)
         {
             if (Options.PathDisplayStyle == PathDisplayStyle.Match
-                && result.Match != null
-                && !object.ReferenceEquals(result.Match, Match.Empty))
+                && fileMatch.NameMatch != null
+                && !object.ReferenceEquals(fileMatch.NameMatch, Match.Empty))
             {
                 if (ShouldLog(Verbosity.Minimal))
                 {
                     Write(indent, Verbosity.Minimal);
-                    Write(result.Match.Value, (Options.HighlightMatch) ? matchColors : default, Verbosity.Minimal);
+                    Write(fileMatch.NameMatch.Value, (Options.HighlightMatch) ? matchColors : default, Verbosity.Minimal);
                 }
             }
             else
             {
                 LogHelpers.WritePath(
-                    result,
+                    fileMatch,
                     baseDirectoryPath,
                     relativePath: Options.DisplayRelativePath,
                     colors: Colors.Matched_Path,
@@ -470,17 +445,17 @@ namespace Orang.CommandLine
                     verbosity: Verbosity.Minimal);
             }
 
-            WriteProperties(context, result, columnWidths);
+            WriteProperties(context, fileMatch, columnWidths);
         }
 
-        protected void WriteProperties(SearchContext context, FileSystemFinderResult result, ColumnWidths columnWidths)
+        protected void WriteProperties(SearchContext context, FileMatch fileMatch, ColumnWidths columnWidths)
         {
             if (columnWidths != null
                 && ShouldLog(Verbosity.Minimal))
             {
                 StringBuilder sb = StringBuilderCache.GetInstance();
 
-                sb.Append(' ', columnWidths.NameWidth - result.Path.Length);
+                sb.Append(' ', columnWidths.NameWidth - fileMatch.Path.Length);
 
                 foreach (FileProperty fileProperty in Options.Format.FileProperties)
                 {
@@ -488,9 +463,9 @@ namespace Orang.CommandLine
                     {
                         sb.Append("  ");
 
-                        long size = (result.IsDirectory)
-                            ? context.DirectorySizeMap[result.Path]
-                            : new FileInfo(result.Path).Length;
+                        long size = (fileMatch.IsDirectory)
+                            ? context.DirectorySizeMap[fileMatch.Path]
+                            : new FileInfo(fileMatch.Path).Length;
 
                         string sizeText = size.ToString("n0");
 
@@ -505,12 +480,12 @@ namespace Orang.CommandLine
                     else if (fileProperty == FileProperty.CreationTime)
                     {
                         sb.Append("  ");
-                        sb.Append(File.GetCreationTime(result.Path).ToString("yyyy-MM-dd HH:mm:ss"));
+                        sb.Append(File.GetCreationTime(fileMatch.Path).ToString("yyyy-MM-dd HH:mm:ss"));
                     }
                     else if (fileProperty == FileProperty.ModifiedTime)
                     {
                         sb.Append("  ");
-                        sb.Append(File.GetLastWriteTime(result.Path).ToString("yyyy-MM-dd HH:mm:ss"));
+                        sb.Append(File.GetLastWriteTime(fileMatch.Path).ToString("yyyy-MM-dd HH:mm:ss"));
                     }
                     else
                     {

@@ -6,9 +6,9 @@ using Orang.Syntax;
 
 namespace Orang.CommandLine
 {
-    internal sealed class ListSyntaxCommandOptions : CommonListCommandOptions
+    internal sealed class ListPatternsCommandOptions : CommonListCommandOptions
     {
-        internal ListSyntaxCommandOptions()
+        internal ListPatternsCommandOptions()
         {
         }
 
@@ -19,5 +19,10 @@ namespace Orang.CommandLine
         public RegexOptions RegexOptions { get; internal set; }
 
         public ImmutableArray<SyntaxSection> Sections { get; internal set; }
+
+        protected override void WriteDiagnosticCore()
+        {
+            DiagnosticWriter.WriteListPatternsCommand(this);
+        }
     }
 }
