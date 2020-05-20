@@ -55,18 +55,18 @@ namespace Orang
                 Write(buffer);
         }
 
-        public void Write(string value, int startIndex, int length)
+        public void Write(string? value, int startIndex, int length)
         {
             Write(value.AsSpan(startIndex, length));
         }
 
-        public void Write(string value, int startIndex, int length, Verbosity verbosity)
+        public void Write(string? value, int startIndex, int length, Verbosity verbosity)
         {
             if (verbosity <= Verbosity)
                 Write(value.AsSpan(startIndex, length));
         }
 
-        public void WriteIf(bool condition, string value)
+        public void WriteIf(bool condition, string? value)
         {
             if (condition)
                 Write(value);
@@ -78,7 +78,7 @@ namespace Orang
                 Write(buffer);
         }
 
-        public void WriteIf(bool condition, string value, Verbosity verbosity)
+        public void WriteIf(bool condition, string? value, Verbosity verbosity)
         {
             if (condition && verbosity <= Verbosity)
                 Write(value);
@@ -96,7 +96,7 @@ namespace Orang
                 WriteLine();
         }
 
-        public void WriteLine(string value, Verbosity verbosity)
+        public void WriteLine(string? value, Verbosity verbosity)
         {
             if (verbosity <= Verbosity)
                 WriteLine(value);
@@ -120,7 +120,7 @@ namespace Orang
                 WriteLine();
         }
 
-        public void WriteLineIf(bool condition, string value)
+        public void WriteLineIf(bool condition, string? value)
         {
             if (condition)
                 WriteLine(value);

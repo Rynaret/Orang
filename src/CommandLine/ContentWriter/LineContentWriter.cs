@@ -21,7 +21,7 @@ namespace Orang.CommandLine
 
         public LineContentWriter(
             string input,
-            ContentTextWriter writer,
+            ContentTextWriter? writer,
             ContentWriterOptions options,
             IResultStorage? storage = null) : base(input, writer, options)
         {

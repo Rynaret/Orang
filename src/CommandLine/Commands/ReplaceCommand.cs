@@ -44,9 +44,9 @@ namespace Orang.CommandLine
         {
             int count = 0;
             var maxReason = MaxReason.None;
-            Match match = Options.ContentFilter!.Match(input);
+            Match? match = Options.ContentFilter!.Match(input);
 
-            if (match.Success)
+            if (match != null)
             {
                 ContentWriter? contentWriter = null;
                 List<Capture>? groups = null;
@@ -65,7 +65,7 @@ namespace Orang.CommandLine
                     }
                     else
                     {
-                        contentWriter = new EmptyContentWriter(null, FileWriterOptions);
+                        contentWriter = new EmptyContentWriter(FileWriterOptions);
                     }
 
                     WriteMatches(contentWriter, groups, context);
@@ -94,7 +94,7 @@ namespace Orang.CommandLine
 
         protected override void ExecuteFile(string filePath, SearchContext context)
         {
-            FileMatch fileMatch = MatchFile(filePath);
+            FileMatch? fileMatch = MatchFile(filePath);
 
             if (fileMatch != null)
                 ExecuteOrAddMatch(fileMatch, context, FileWriterOptions);
@@ -114,7 +114,7 @@ namespace Orang.CommandLine
             }
         }
 
-        protected override void ExecuteMatch(FileMatch fileMatch, SearchContext context, string baseDirectoryPath = null, ColumnWidths columnWidths = null)
+        protected override void ExecuteMatch(FileMatch fileMatch, SearchContext context, string? baseDirectoryPath = null, ColumnWidths? columnWidths = null)
         {
             string indent = GetPathIndent(baseDirectoryPath);
 
@@ -128,8 +128,8 @@ namespace Orang.CommandLine
             FileMatch fileMatch,
             SearchContext context,
             ContentWriterOptions writerOptions,
-            string baseDirectoryPath = null,
-            ColumnWidths columnWidths = null)
+            string? baseDirectoryPath = null,
+            ColumnWidths? columnWidths = null)
         {
             string indent = GetPathIndent(baseDirectoryPath);
 
@@ -147,15 +147,15 @@ namespace Orang.CommandLine
         {
             SearchTelemetry telemetry = context.Telemetry;
 
-            ContentWriter contentWriter = null;
-            TextWriter textWriter = null;
-            List<Capture> groups = null;
+            ContentWriter? contentWriter = null;
+            TextWriter? textWriter = null;
+            List<Capture>? groups = null;
 
             try
             {
                 groups = ListCache<Capture>.GetInstance();
 
-                GetCaptures(fileMatch.ContentMatch, writerOptions.GroupNumber, context, isPathWritten: !Options.OmitPath, predicate: Options.ContentFilter.Predicate, captures: groups);
+                GetCaptures(fileMatch.ContentMatch!, writerOptions.GroupNumber, context, isPathWritten: !Options.OmitPath, predicate: Options.ContentFilter!.Predicate, captures: groups);
 
                 int fileMatchCount = 0;
                 int fileReplacementCount = 0;
@@ -175,7 +175,7 @@ namespace Orang.CommandLine
                 if (Options.AskMode == AskMode.Value
                     || ShouldLog(Verbosity.Normal))
                 {
-                    MatchOutputInfo outputInfo = Options.CreateOutputInfo(fileMatch);
+                    MatchOutputInfo? outputInfo = Options.CreateOutputInfo(fileMatch);
 
                     if (Options.AskMode == AskMode.Value)
                     {
@@ -192,11 +192,14 @@ namespace Orang.CommandLine
                 }
                 else if (Options.DryRun)
                 {
-                    contentWriter = new EmptyContentWriter(null, FileWriterOptions);
+                    contentWriter = new EmptyContentWriter(FileWriterOptions);
                 }
                 else
                 {
+                    //TODO: 
+#pragma warning disable CS8604 // Possible null reference argument.
                     contentWriter = new TextWriterContentWriter(fileMatch.ContentText, Options.ReplaceOptions, textWriter, writerOptions);
+#pragma warning restore CS8604 // Possible null reference argument.
                 }
 
                 WriteMatches(contentWriter, groups, context);

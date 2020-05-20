@@ -251,7 +251,7 @@ namespace Orang.CommandLine
             }
         }
 
-        protected sealed override void WritePath(SearchContext context, FileMatch fileMatch, string baseDirectoryPath, string indent, ColumnWidths columnWidths)
+        protected sealed override void WritePath(SearchContext context, FileMatch fileMatch, string? baseDirectoryPath, string indent, ColumnWidths? columnWidths)
         {
         }
 

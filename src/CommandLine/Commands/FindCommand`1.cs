@@ -14,11 +14,11 @@ namespace Orang.CommandLine
 {
     internal sealed class FindCommand<TOptions> : CommonFindCommand<TOptions> where TOptions : FindCommandOptions
     {
-        private OutputSymbols _symbols;
-        private IResultStorage _storage;
-        private List<int> _storageIndexes;
-        private IResultStorage _fileStorage;
-        private List<string> _fileValues;
+        private OutputSymbols? _symbols;
+        private IResultStorage? _storage;
+        private List<int>? _storageIndexes;
+        private IResultStorage? _fileStorage;
+        private List<string>? _fileValues;
 
         public FindCommand(TOptions options) : base(options)
         {
@@ -61,22 +61,25 @@ namespace Orang.CommandLine
             base.ExecuteDirectory(directoryPath, context);
 
             if (ContentFilter == null)
-                _storageIndexes?.Add(_storage.Count);
+                _storageIndexes?.Add(_storage!.Count);
         }
 
         protected override void ExecuteMatch(
             FileMatch fileMatch,
             SearchContext context,
             ContentWriterOptions writerOptions,
-            string baseDirectoryPath = null,
-            ColumnWidths columnWidths = null)
+            string? baseDirectoryPath = null,
+            ColumnWidths? columnWidths = null)
         {
             string indent = GetPathIndent(baseDirectoryPath);
 
             if (!Options.OmitPath)
                 WritePath(context, fileMatch, baseDirectoryPath, indent, columnWidths);
 
+            //TODO: 
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
             if (ContentFilter.IsNegative
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
                 || fileMatch.IsDirectory)
             {
                 WriteLineIf(!Options.OmitPath, Verbosity.Minimal);
@@ -89,7 +92,7 @@ namespace Orang.CommandLine
             AskToContinue(context, indent);
         }
 
-        protected override void ExecuteMatch(FileMatch fileMatch, SearchContext context, string baseDirectoryPath = null, ColumnWidths columnWidths = null)
+        protected override void ExecuteMatch(FileMatch fileMatch, SearchContext context, string? baseDirectoryPath = null, ColumnWidths? columnWidths = null)
         {
             string indent = GetPathIndent(baseDirectoryPath);
 
@@ -122,7 +125,7 @@ namespace Orang.CommandLine
 
                 //TODO: 
 #pragma warning disable CS8604 // Possible null reference argument.
-                GetCaptures(fileMatch.ContentMatch, writerOptions.GroupNumber, context, isPathWritten: !Options.OmitPath, predicate: ContentFilter.Predicate, captures: captures);
+                GetCaptures(fileMatch.ContentMatch, writerOptions.GroupNumber, context, isPathWritten: !Options.OmitPath, predicate: ContentFilter!.Predicate, captures: captures);
 #pragma warning restore CS8604 // Possible null reference argument.
 
                 bool hasAnyFunction = Options.ModifyOptions.HasAnyFunction;
@@ -157,7 +160,7 @@ namespace Orang.CommandLine
                 }
                 else
                 {
-                    contentWriter = new EmptyContentWriter(null, writerOptions);
+                    contentWriter = new EmptyContentWriter(writerOptions);
                 }
 
                 WriteMatches(contentWriter, captures, context);
@@ -169,7 +172,7 @@ namespace Orang.CommandLine
 
                     var valueWriter = new ValueWriter(ContentTextWriter.Default, writerOptions.Indent, includeEndingIndent: false);
 
-                    foreach (string value in _fileValues.Modify(Options.ModifyOptions))
+                    foreach (string value in _fileValues!.Modify(Options.ModifyOptions))
                     {
                         Write(writerOptions.Indent, Verbosity.Normal);
                         valueWriter.Write(value, Symbols, colors, boundaryColors);
@@ -221,7 +224,7 @@ namespace Orang.CommandLine
         {
             int count = 0;
             ModifyOptions modifyOptions = Options.ModifyOptions;
-            List<string> allValues = ((ListResultStorage)_storage).Values;
+            List<string> allValues = ((ListResultStorage)_storage!).Values;
 
             if (_storageIndexes?.Count > 1)
             {

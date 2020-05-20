@@ -37,7 +37,7 @@ namespace Orang.CommandLine
         protected override void ProcessMatch(
             FileMatch fileMatch,
             SearchContext context,
-            string baseDirectoryPath = null)
+            string? baseDirectoryPath = null)
         {
             ExecuteOrAddMatch(fileMatch, context, baseDirectoryPath);
         }
@@ -45,12 +45,12 @@ namespace Orang.CommandLine
         protected override void ExecuteMatch(
             FileMatch fileMatch,
             SearchContext context,
-            string baseDirectoryPath,
-            ColumnWidths columnWidths)
+            string? baseDirectoryPath,
+            ColumnWidths? columnWidths)
         {
             string indent = GetPathIndent(baseDirectoryPath);
 
-            List<ReplaceItem> replaceItems = ReplaceHelpers.GetReplaceItems(fileMatch.NameMatch!, Options.ReplaceOptions, NameFilter.Predicate, context.CancellationToken);
+            List<ReplaceItem> replaceItems = ReplaceHelpers.GetReplaceItems(fileMatch.NameMatch!, Options.ReplaceOptions, NameFilter!.Predicate, context.CancellationToken);
 
             string path = fileMatch.Path;
             string newPath = ReplaceHelpers.GetNewPath(fileMatch, replaceItems);

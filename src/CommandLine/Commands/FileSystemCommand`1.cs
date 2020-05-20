@@ -360,7 +360,7 @@ namespace Orang.CommandLine
             }
         }
 
-        protected void ExecuteOrAddMatch(FileMatch fileMatch, SearchContext context, string baseDirectoryPath)
+        protected void ExecuteOrAddMatch(FileMatch fileMatch, SearchContext context, string? baseDirectoryPath)
         {
             if (fileMatch.IsDirectory)
             {
@@ -431,7 +431,7 @@ namespace Orang.CommandLine
             WriteLine(Verbosity.Minimal);
         }
 
-        protected void WritePath(SearchContext context, FileMatch fileMatch, string baseDirectoryPath, string indent, ColumnWidths columnWidths, ConsoleColors matchColors)
+        protected void WritePath(SearchContext context, FileMatch fileMatch, string? baseDirectoryPath, string indent, ColumnWidths? columnWidths, ConsoleColors matchColors)
         {
             if (Options.PathDisplayStyle == PathDisplayStyle.Match
                 && fileMatch.NameMatch != null
@@ -458,7 +458,7 @@ namespace Orang.CommandLine
             WriteProperties(context, fileMatch, columnWidths);
         }
 
-        protected void WriteProperties(SearchContext context, FileMatch fileMatch, ColumnWidths columnWidths)
+        protected void WriteProperties(SearchContext context, FileMatch fileMatch, ColumnWidths? columnWidths)
         {
             if (columnWidths != null
                 && ShouldLog(Verbosity.Minimal))

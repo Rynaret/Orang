@@ -356,7 +356,7 @@ namespace Orang.FileSystem
 
                 if (Content != null)
                 {
-                    Match contentMatch = Content.Match(fileContent.Text);
+                    Match? contentMatch = Content.Match(fileContent.Text);
 
                     if (contentMatch == null)
                         return default;

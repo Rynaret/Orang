@@ -8,9 +8,8 @@ namespace Orang.CommandLine
     internal class EmptyContentWriter : ContentWriter
     {
         public EmptyContentWriter(
-            string input,
             ContentWriterOptions options,
-            IResultStorage? resultStorage = null) : base(input, options)
+            IResultStorage? resultStorage = null) : base("", options)
         {
             ResultStorage = resultStorage;
         }

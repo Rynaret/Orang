@@ -18,7 +18,7 @@ namespace Orang.CommandLine
 
         public ValueContentWriter(
             string input,
-            ContentTextWriter writer,
+            ContentTextWriter? writer,
             ContentWriterOptions options,
             IResultStorage? storage = null,
             MatchOutputInfo? outputInfo = null) : base(input, writer, options)

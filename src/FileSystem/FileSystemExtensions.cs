@@ -18,12 +18,12 @@ namespace Orang
             progress.Report(new OperationProgress(fileMatch, newPath, kind, exception));
         }
 
-        public static Match Match(this Filter filter, in FileNameSpan name)
+        public static Match? Match(this Filter filter, in FileNameSpan name)
         {
             return filter.Match(filter.Regex.Match(name.Path, name.Start, name.Length));
         }
 
-        public static Match Match(this Filter filter, in FileNameSpan name, bool matchPartOnly)
+        public static Match? Match(this Filter filter, in FileNameSpan name, bool matchPartOnly)
         {
             return (matchPartOnly)
                 ? filter.Match(name.ToString())

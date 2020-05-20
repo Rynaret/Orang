@@ -5,7 +5,7 @@ namespace Orang.CommandLine
     internal class LineNumberValueWriter : ValueWriter
     {
         public LineNumberValueWriter(
-            ContentTextWriter writer,
+            ContentTextWriter? writer,
             string? indent = null,
             bool includeEndingIndent = true,
             bool includeEndingLineNumber = true) : base(writer, indent: indent, includeEndingIndent: includeEndingIndent)

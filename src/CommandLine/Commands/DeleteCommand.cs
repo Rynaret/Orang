@@ -17,7 +17,7 @@ namespace Orang.CommandLine
         protected override void ProcessMatch(
             FileMatch fileMatch,
             SearchContext context,
-            string baseDirectoryPath = null)
+            string? baseDirectoryPath = null)
         {
             Debug.Assert(baseDirectoryPath == null || fileMatch.Path.StartsWith(baseDirectoryPath, FileSystemHelpers.Comparison), $"{baseDirectoryPath}\r\n{fileMatch.Path}");
 
@@ -27,8 +27,8 @@ namespace Orang.CommandLine
         protected override void ExecuteMatch(
             FileMatch fileMatch,
             SearchContext context,
-            string baseDirectoryPath = null,
-            ColumnWidths columnWidths = null)
+            string? baseDirectoryPath = null,
+            ColumnWidths? columnWidths = null)
         {
             string indent = GetPathIndent(baseDirectoryPath);
 

@@ -18,17 +18,17 @@ namespace Orang.CommandLine
             Logger.Write(value, Verbosity);
         }
 
-        public void Write(string value, in ConsoleColors colors)
+        public void Write(string? value, in ConsoleColors colors)
         {
             Logger.Write(value, colors, Verbosity);
         }
 
-        public void Write(string value, int startIndex, int length)
+        public void Write(string? value, int startIndex, int length)
         {
             Logger.Write(value, startIndex, length, Verbosity);
         }
 
-        public void Write(string value, int startIndex, int length, in ConsoleColors colors)
+        public void Write(string? value, int startIndex, int length, in ConsoleColors colors)
         {
             Logger.Write(value, startIndex, length, colors, Verbosity);
         }

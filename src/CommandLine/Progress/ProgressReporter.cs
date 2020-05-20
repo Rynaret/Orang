@@ -14,7 +14,7 @@ namespace Orang.FileSystem
 
         public string Indent { get; }
 
-        public string BaseDirectoryPath { get; private set; }
+        public string? BaseDirectoryPath { get; private set; }
 
         public int SearchedDirectoryCount { get; protected set; }
 
@@ -64,7 +64,7 @@ namespace Orang.FileSystem
         protected void WriteError(SearchProgress value)
         {
             LogHelpers.WriteFileError(
-                value.Exception,
+                value.Exception!,
                 value.Path,
                 basePath: BaseDirectoryPath,
                 colors: Colors.Message_Warning,

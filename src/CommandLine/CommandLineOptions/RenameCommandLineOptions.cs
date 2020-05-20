@@ -73,16 +73,16 @@ namespace Orang.CommandLine
             if (!TryParseAsEnumFlags(Highlight, OptionNames.Highlight, out HighlightOptions highlightOptions, defaultValue: HighlightOptions.Replacement, provider: OptionValueProviders.RenameHighlightOptionsProvider))
                 return false;
 
-            if (!FilterParser.TryParse(Name, OptionNames.Name, OptionValueProviders.PatternOptionsWithoutGroupAndNegativeProvider, out Filter nameFilter, out FileNamePart namePart, namePartProvider: OptionValueProviders.NamePartKindProvider_WithoutFullName))
+            if (!FilterParser.TryParse(Name, OptionNames.Name, OptionValueProviders.PatternOptionsWithoutGroupAndNegativeProvider, out Filter? nameFilter, out FileNamePart namePart, namePartProvider: OptionValueProviders.NamePartKindProvider_WithoutFullName))
                 return false;
 
-            if (!FilterParser.TryParse(Content, OptionNames.Content, OptionValueProviders.PatternOptionsWithoutPartProvider, out Filter contentFilter, allowNull: true))
+            if (!FilterParser.TryParse(Content, OptionNames.Content, OptionValueProviders.PatternOptionsWithoutPartProvider, out Filter? contentFilter, allowNull: true))
                 return false;
 
             if (!TryParseReplacement(Replacement, out string? replacement))
                 return false;
 
-            if (!DelegateFactory.TryCreateMatchEvaluator(Evaluator, out MatchEvaluator matchEvaluator))
+            if (!DelegateFactory.TryCreateMatchEvaluator(Evaluator, out MatchEvaluator? matchEvaluator))
                 return false;
 
             if (replacement != null && matchEvaluator != null)

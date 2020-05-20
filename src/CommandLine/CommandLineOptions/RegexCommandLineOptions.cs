@@ -62,7 +62,7 @@ namespace Orang.CommandLine
             }
             else if (string.IsNullOrEmpty(input))
             {
-                input = ConsoleHelpers.ReadRedirectedInput();
+                input = ConsoleHelpers.ReadRedirectedInput()!;
 
                 if (input == null)
                 {

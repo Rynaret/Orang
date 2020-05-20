@@ -33,7 +33,7 @@ namespace Orang.CommandLine
 
         public TerminationReason TerminationReason { get; set; }
 
-        public void AddResult(FileMatch match, string baseDirectoryPath)
+        public void AddResult(FileMatch match, string? baseDirectoryPath)
         {
             var result = new SearchResult(match, baseDirectoryPath);
 

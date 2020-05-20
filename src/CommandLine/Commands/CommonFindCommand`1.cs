@@ -311,7 +311,7 @@ namespace Orang.CommandLine
             return maxReason;
         }
 
-        protected override void WritePath(SearchContext context, FileMatch fileMatch, string baseDirectoryPath, string indent, ColumnWidths columnWidths)
+        protected override void WritePath(SearchContext context, FileMatch fileMatch, string? baseDirectoryPath, string indent, ColumnWidths? columnWidths)
         {
             if (ContentFilter != null)
             {
