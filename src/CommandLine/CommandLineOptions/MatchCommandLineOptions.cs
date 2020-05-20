@@ -15,7 +15,7 @@ namespace Orang.CommandLine
             Required = true,
             HelpText = "Regular expression for the input string. Syntax is <PATTERN> [<PATTERN_OPTIONS>].",
             MetaValue = MetaValues.Regex)]
-        public IEnumerable<string> Content { get; set; }
+        public IEnumerable<string> Content { get; set; } = null!;
 
         [Option(shortName: OptionShortNames.MaxCount, longName: OptionNames.MaxCount,
             Default = -1,

@@ -13,15 +13,15 @@ namespace Orang.CommandLine
 {
     internal abstract class CommonFindCommand<TOptions> : FileSystemCommand<TOptions> where TOptions : CommonFindCommandOptions
     {
-        private OutputSymbols _symbols;
-        private ContentWriterOptions _fileWriterOptions;
-        private ContentWriterOptions _directoryWriterOptions;
+        private OutputSymbols? _symbols;
+        private ContentWriterOptions? _fileWriterOptions;
+        private ContentWriterOptions? _directoryWriterOptions;
 
         protected CommonFindCommand(TOptions options) : base(options)
         {
         }
 
-        public Filter ContentFilter => Options.ContentFilter;
+        public Filter? ContentFilter => Options.ContentFilter;
 
         private OutputSymbols Symbols => _symbols ?? (_symbols = OutputSymbols.Create(Options.HighlightOptions));
 
@@ -105,7 +105,7 @@ namespace Orang.CommandLine
 
         protected override void ExecuteFile(string filePath, SearchContext context)
         {
-            FileMatch fileMatch = MatchFile(filePath);
+            FileMatch? fileMatch = MatchFile(filePath);
 
             if (fileMatch != null)
             {
@@ -145,7 +145,7 @@ namespace Orang.CommandLine
             FileMatch fileMatch,
             SearchContext context,
             ContentWriterOptions writerOptions,
-            string baseDirectoryPath = null)
+            string? baseDirectoryPath = null)
         {
             ExecuteOrAddMatch(fileMatch, context, writerOptions, baseDirectoryPath);
         }
@@ -153,8 +153,8 @@ namespace Orang.CommandLine
         protected void ExecuteOrAddMatch(
             FileMatch fileMatch,
             SearchContext context,
-            ContentWriterOptions writerOptions,
-            string baseDirectoryPath = null)
+            ContentWriterOptions? writerOptions,
+            string? baseDirectoryPath = null)
         {
             if (fileMatch.IsDirectory)
             {
@@ -186,14 +186,17 @@ namespace Orang.CommandLine
             FileMatch fileMatch,
             SearchContext context,
             ContentWriterOptions writerOptions,
-            string baseDirectoryPath = null,
-            ColumnWidths columnWidths = null);
+            string? baseDirectoryPath = null,
+            ColumnWidths? columnWidths = null);
 
-        protected override void ExecuteResult(SearchResult result, SearchContext context, ColumnWidths columnWidths)
+        protected override void ExecuteResult(SearchResult result, SearchContext context, ColumnWidths? columnWidths)
         {
             if (ContentFilter != null)
             {
+                //TODO: infinite loop
+#pragma warning disable CS8604 // Possible null reference argument.
                 ExecuteMatch(result.FileMatch, context, result.WriterOptions, result.BaseDirectoryPath, columnWidths);
+#pragma warning restore CS8604 // Possible null reference argument.
             }
             else
             {
@@ -234,7 +237,7 @@ namespace Orang.CommandLine
             int groupNumber,
             SearchContext context,
             bool isPathWritten,
-            Func<Capture, bool> predicate,
+            Func<Capture, bool>? predicate,
             List<Capture> captures)
         {
             int maxMatchesInFile = Options.MaxMatchesInFile;

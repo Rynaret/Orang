@@ -23,7 +23,7 @@ namespace Orang.CommandLine
             protected set { Options.ConflictResolution = value; }
         }
 
-        protected HashSet<string> IgnoredPaths { get; set; }
+        protected HashSet<string>? IgnoredPaths { get; set; }
 
         protected abstract void ExecuteOperation(string sourcePath, string destinationPath);
 
@@ -48,13 +48,13 @@ namespace Orang.CommandLine
             FileMatch fileMatch,
             SearchContext context,
             ContentWriterOptions writerOptions,
-            string baseDirectoryPath = null,
-            ColumnWidths columnWidths = null)
+            string? baseDirectoryPath = null,
+            ColumnWidths? columnWidths = null)
         {
             ExecuteMatch(fileMatch, context, baseDirectoryPath, columnWidths);
         }
 
-        protected sealed override void ExecuteMatch(FileMatch fileMatch, SearchContext context, string baseDirectoryPath = null, ColumnWidths columnWidths = null)
+        protected sealed override void ExecuteMatch(FileMatch fileMatch, SearchContext context, string? baseDirectoryPath = null, ColumnWidths? columnWidths = null)
         {
             ExecuteOperation(fileMatch, context, baseDirectoryPath, GetPathIndent(baseDirectoryPath));
 
@@ -65,7 +65,7 @@ namespace Orang.CommandLine
         private void ExecuteOperation(
             FileMatch fileMatch,
             SearchContext context,
-            string baseDirectoryPath,
+            string? baseDirectoryPath,
             string indent)
         {
             string sourcePath = fileMatch.Path;
@@ -74,9 +74,13 @@ namespace Orang.CommandLine
             if (fileMatch.IsDirectory
                 || (baseDirectoryPath != null && !Options.Flat))
             {
+                //TODO: 
+#pragma warning disable CS8604 // Possible null reference argument.
                 Debug.Assert(sourcePath.StartsWith(baseDirectoryPath, FileSystemHelpers.Comparison));
-
+#pragma warning restore CS8604 // Possible null reference argument.
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
                 string relativePath = sourcePath.Substring(baseDirectoryPath.Length + 1);
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
 
                 destinationPath = Path.Combine(Target, relativePath);
             }

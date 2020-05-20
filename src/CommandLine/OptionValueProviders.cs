@@ -17,7 +17,7 @@ namespace Orang.CommandLine
     internal static class OptionValueProviders
     {
         private static readonly Regex _metaValueRegex = new Regex(@"\<\w+\>");
-        private static ImmutableDictionary<string, OptionValueProvider> _providersByName;
+        private static ImmutableDictionary<string, OptionValueProvider>? _providersByName;
 
         public static OptionValueProvider PatternOptionsProvider { get; } = new OptionValueProvider(MetaValues.PatternOptions,
             OptionValues.PatternOptions_Compiled,
@@ -396,7 +396,7 @@ namespace Orang.CommandLine
 
         public static IEnumerable<OptionValueProvider> Providers => ProvidersByName.Select(f => f.Value);
 
-        public static IEnumerable<OptionValueProvider> GetProviders(IEnumerable<CommandOption> options, IEnumerable<OptionValueProvider> allProviders = null)
+        public static IEnumerable<OptionValueProvider> GetProviders(IEnumerable<CommandOption> options, IEnumerable<OptionValueProvider>? allProviders = null)
         {
             IEnumerable<string> metaValues = options
                 .SelectMany(f => _metaValueRegex.Matches(f.Description).Select(m => m.Value))
@@ -418,7 +418,7 @@ namespace Orang.CommandLine
                 .OrderBy(f => f.Name);
         }
 
-        public static string GetHelpText(OptionValueProvider provider, Func<OptionValue, bool> predicate = null, bool multiline = false)
+        public static string? GetHelpText(OptionValueProvider? provider, Func<OptionValue, bool>? predicate = null, bool multiline = false)
         {
             if (provider == null)
                 return null;

@@ -113,14 +113,17 @@ namespace Orang.CommandLine
         {
             SearchTelemetry telemetry = context.Telemetry;
 
-            ContentWriter contentWriter = null;
-            List<Capture> captures = null;
+            ContentWriter? contentWriter = null;
+            List<Capture>? captures = null;
 
             try
             {
                 captures = ListCache<Capture>.GetInstance();
 
+                //TODO: 
+#pragma warning disable CS8604 // Possible null reference argument.
                 GetCaptures(fileMatch.ContentMatch, writerOptions.GroupNumber, context, isPathWritten: !Options.OmitPath, predicate: ContentFilter.Predicate, captures: captures);
+#pragma warning restore CS8604 // Possible null reference argument.
 
                 bool hasAnyFunction = Options.ModifyOptions.HasAnyFunction;
 

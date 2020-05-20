@@ -10,7 +10,7 @@ namespace Orang.CommandLine
     {
         protected readonly Lazy<TextWriter> _lazyWriter;
         protected int _writerIndex;
-        private ValueWriter _valueWriter;
+        private ValueWriter? _valueWriter;
 
         protected AskReplacementWriter(
             string input,
@@ -164,7 +164,7 @@ namespace Orang.CommandLine
             private int _eolIndex;
             private int _solIndex;
             private int _lineNumber;
-            private ValueWriter _replacementValueWriter;
+            private ValueWriter? _replacementValueWriter;
 
             public AskLineReplacementWriter(
                 string input,

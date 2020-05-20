@@ -8,7 +8,7 @@ namespace Orang
     {
         public static ConsoleWriter ConsoleOut { get; } = ConsoleWriter.Instance;
 
-        public static TextWriterWithVerbosity Out { get; set; }
+        public static TextWriterWithVerbosity? Out { get; set; }
 
         public static void Write(char value)
         {
@@ -51,7 +51,7 @@ namespace Orang
             Out?.Write(value);
         }
 
-        public static void Write(string value, Verbosity verbosity)
+        public static void Write(string? value, Verbosity verbosity)
         {
             ConsoleOut.Write(value, verbosity: verbosity);
             Out?.Write(value, verbosity: verbosity);
@@ -185,7 +185,7 @@ namespace Orang
 
         public static void WriteWarning(
             Exception exception,
-            string message = null,
+            string? message = null,
             in ConsoleColors colors = default,
             Verbosity verbosity = Verbosity.Minimal)
         {
@@ -207,7 +207,7 @@ namespace Orang
 
         public static void WriteError(
             Exception exception,
-            string message = null)
+            string? message = null)
         {
             WriteError(message ?? exception.Message);
 

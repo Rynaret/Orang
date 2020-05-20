@@ -12,9 +12,9 @@ namespace Orang.CommandLine
         {
         }
 
-        public event EventHandler<DirectoryChangedEventArgs> DirectoryChanged;
+        public event EventHandler<DirectoryChangedEventArgs>? DirectoryChanged;
 
-        protected abstract void ProcessMatch(FileMatch fileMatch, SearchContext context, string baseDirectoryPath = null);
+        protected abstract void ProcessMatch(FileMatch fileMatch, SearchContext context, string? baseDirectoryPath = null);
 
         protected virtual void OnDirectoryChanged(DirectoryChangedEventArgs e)
         {
@@ -23,7 +23,7 @@ namespace Orang.CommandLine
 
         protected sealed override void ExecuteFile(string filePath, SearchContext context)
         {
-            FileMatch fileMatch = MatchFile(filePath);
+            FileMatch? fileMatch = MatchFile(filePath);
 
             if (fileMatch != null)
                 ProcessMatch(fileMatch, context);
@@ -45,7 +45,7 @@ namespace Orang.CommandLine
             }
         }
 
-        protected sealed override void ExecuteResult(SearchResult result, SearchContext context, ColumnWidths columnWidths)
+        protected sealed override void ExecuteResult(SearchResult result, SearchContext context, ColumnWidths? columnWidths)
         {
             ExecuteMatch(result.FileMatch, context, result.BaseDirectoryPath, columnWidths);
         }

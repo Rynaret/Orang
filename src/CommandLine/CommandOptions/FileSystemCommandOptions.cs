@@ -20,15 +20,15 @@ namespace Orang.CommandLine
 
         public ImmutableArray<PathInfo> Paths { get; internal set; }
 
-        public Filter NameFilter { get; internal set; }
+        public Filter? NameFilter { get; internal set; }
 
         public FileNamePart NamePart { get; internal set; }
 
-        public Filter ExtensionFilter { get; internal set; }
+        public Filter? ExtensionFilter { get; internal set; }
 
-        public Filter ContentFilter { get; internal set; }
+        public Filter? ContentFilter { get; internal set; }
 
-        public Filter DirectoryFilter { get; internal set; }
+        public Filter? DirectoryFilter { get; internal set; }
 
         public FileNamePart DirectoryNamePart { get; internal set; }
 
@@ -48,15 +48,15 @@ namespace Orang.CommandLine
 
         public int MaxMatchingFiles { get; internal set; }
 
-        public SortOptions SortOptions { get; internal set; }
+        public SortOptions? SortOptions { get; internal set; }
 
         public FilePropertyFilter FilePropertyFilter { get; internal set; }
 
-        public FilterPredicate<DateTime> CreationTimePredicate { get; internal set; }
+        public FilterPredicate<DateTime>? CreationTimePredicate { get; internal set; }
 
-        public FilterPredicate<DateTime> ModifiedTimePredicate { get; internal set; }
+        public FilterPredicate<DateTime>? ModifiedTimePredicate { get; internal set; }
 
-        public FilterPredicate<long> SizePredicate { get; internal set; }
+        public FilterPredicate<long>? SizePredicate { get; internal set; }
 
         public ContentDisplayStyle ContentDisplayStyle => Format.ContentDisplayStyle;
 
@@ -72,17 +72,23 @@ namespace Orang.CommandLine
 
         internal bool IncludeBaseDirectory => Format.IncludeBaseDirectory;
 
-        internal MatchOutputInfo CreateOutputInfo(FileMatch fileMatch)
+        internal MatchOutputInfo? CreateOutputInfo(FileMatch fileMatch)
         {
+            //TODO: 
+#pragma warning disable CS8604 // Possible null reference argument.
             return CreateOutputInfo(fileMatch.ContentText, fileMatch.ContentMatch);
+#pragma warning restore CS8604 // Possible null reference argument.
         }
 
-        internal MatchOutputInfo CreateOutputInfo(string input, Match match)
+        internal MatchOutputInfo? CreateOutputInfo(string input, Match match)
         {
             if (ContentDisplayStyle != ContentDisplayStyle.ValueDetail)
                 return null;
 
+            //TODO: 
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
             int groupNumber = ContentFilter.GroupNumber;
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
 
             return MatchOutputInfo.Create(
                 MatchData.Create(input, ContentFilter.Regex, match),

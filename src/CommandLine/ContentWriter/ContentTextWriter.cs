@@ -13,7 +13,7 @@ namespace Orang.CommandLine
 
         public Verbosity Verbosity { get; }
 
-        public void Write(string value)
+        public void Write(string? value)
         {
             Logger.Write(value, Verbosity);
         }

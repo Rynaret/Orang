@@ -71,7 +71,7 @@ namespace Orang.CommandLine
             string input,
             ContentWriterOptions options,
             IResultStorage storage,
-            MatchOutputInfo outputInfo,
+            MatchOutputInfo? outputInfo,
             ContentTextWriter writer,
             bool ask = false)
         {
@@ -115,8 +115,8 @@ namespace Orang.CommandLine
             string input,
             ReplaceOptions replaceOptions,
             ContentWriterOptions options,
-            TextWriter textWriter = null,
-            MatchOutputInfo outputInfo = null)
+            TextWriter? textWriter = null,
+            MatchOutputInfo? outputInfo = null)
         {
             switch (contentDisplayStyle)
             {

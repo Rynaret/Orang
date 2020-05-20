@@ -8,7 +8,7 @@ namespace Orang.CommandLine
     {
         public ValueWriter(
             ContentTextWriter writer,
-            string indent = null,
+            string? indent = null,
             bool includeEndingIndent = true)
         {
             Writer = writer;
@@ -18,7 +18,7 @@ namespace Orang.CommandLine
 
         private ContentTextWriter Writer { get; }
 
-        public string Indent { get; }
+        public string? Indent { get; }
 
         public bool IncludeEndingIndent { get; }
 
@@ -27,7 +27,7 @@ namespace Orang.CommandLine
             Write(value, 0, value.Length, symbols, colors, boundaryColors);
         }
 
-        public void Write(string value, int startIndex, int length, OutputSymbols symbols, in ConsoleColors colors = default, in ConsoleColors boundaryColors = default)
+        public void Write(string value, int startIndex, int length, OutputSymbols? symbols, in ConsoleColors colors = default, in ConsoleColors boundaryColors = default)
         {
             if (symbols == null)
                 symbols = OutputSymbols.Empty;
@@ -133,7 +133,7 @@ namespace Orang.CommandLine
             }
         }
 
-        protected virtual void Write(string value)
+        protected virtual void Write(string? value)
         {
             Writer?.Write(value);
         }

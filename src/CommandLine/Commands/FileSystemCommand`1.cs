@@ -20,11 +20,11 @@ namespace Orang.CommandLine
         {
         }
 
-        private FileSystemSearch _search;
+        private FileSystemSearch? _search;
 
         protected FileSystemSearch Search => _search ?? (_search = CreateSearch());
 
-        public Filter NameFilter => Options.NameFilter;
+        public Filter? NameFilter => Options.NameFilter;
 
         protected virtual bool CanDisplaySummary => true;
 
@@ -42,7 +42,7 @@ namespace Orang.CommandLine
                 attributesToSkip: Options.AttributesToSkip,
                 emptyOption: Options.EmptyOption);
 
-            NameFilter directoryFilter = null;
+            NameFilter? directoryFilter = null;
 
             if (Options.DirectoryFilter != null)
             {
@@ -66,19 +66,19 @@ namespace Orang.CommandLine
 
         protected abstract void ExecuteFile(string filePath, SearchContext context);
 
-        protected abstract void ExecuteMatch(FileMatch fileMatch, SearchContext context, string baseDirectoryPath, ColumnWidths columnWidths);
+        protected abstract void ExecuteMatch(FileMatch fileMatch, SearchContext context, string? baseDirectoryPath, ColumnWidths? columnWidths);
 
-        protected abstract void ExecuteResult(SearchResult result, SearchContext context, ColumnWidths columnWidths);
+        protected abstract void ExecuteResult(SearchResult result, SearchContext context, ColumnWidths? columnWidths);
 
         protected abstract void WriteSummary(SearchTelemetry telemetry, Verbosity verbosity);
 
         protected sealed override CommandResult ExecuteCore(CancellationToken cancellationToken = default)
         {
-            List<SearchResult> results = (Options.SortOptions != null || Options.Format.FileProperties.Any())
+            List<SearchResult>? results = (Options.SortOptions != null || Options.Format.FileProperties.Any())
                 ? new List<SearchResult>()
                 : null;
 
-            ProgressReporter progress = CreateProgressReporter();
+            ProgressReporter? progress = CreateProgressReporter();
 
             var context = new SearchContext(new SearchTelemetry(), progress: progress, results: results, cancellationToken: cancellationToken);
 
@@ -90,7 +90,7 @@ namespace Orang.CommandLine
             return (context.Telemetry.MatchingFileCount > 0) ? CommandResult.Success : CommandResult.NoMatch;
         }
 
-        private ProgressReporter CreateProgressReporter()
+        private ProgressReporter? CreateProgressReporter()
         {
             ProgressReportMode consoleReportMode;
             if (ConsoleOut.ShouldWrite(Verbosity.Diagnostic))
@@ -201,8 +201,8 @@ namespace Orang.CommandLine
 
         private void ExecuteResults(SearchContext context)
         {
-            IEnumerable<SearchResult> results = context.Results;
-            SortOptions sortOptions = Options.SortOptions;
+            IEnumerable<SearchResult> results = context.Results!;
+            SortOptions? sortOptions = Options.SortOptions;
 
             if (sortOptions?.Descriptors.Any() == true)
             {
@@ -214,14 +214,14 @@ namespace Orang.CommandLine
                     pathDisplayStyle = PathDisplayStyle.Full;
                 }
 
-                results = SortHelpers.SortResults(context.Results, sortOptions.Descriptors, pathDisplayStyle);
+                results = SortHelpers.SortResults(context.Results!, sortOptions.Descriptors, pathDisplayStyle);
 
                 if (sortOptions.MaxCount > 0)
                     results = results.Take(sortOptions.MaxCount);
             }
 
             ImmutableArray<FileProperty> fileProperties = Options.Format.FileProperties;
-            ColumnWidths columnWidths = null;
+            ColumnWidths? columnWidths = null;
 
             if (fileProperties.Any())
             {
@@ -302,7 +302,7 @@ namespace Orang.CommandLine
         {
             if (Directory.Exists(path))
             {
-                ProgressReporter progress = context.Progress;
+                ProgressReporter? progress = context.Progress;
 
                 progress?.SetBaseDirectoryPath(path);
 
@@ -399,7 +399,7 @@ namespace Orang.CommandLine
         protected IEnumerable<FileMatch> GetMatches(
             string directoryPath,
             SearchContext context,
-            INotifyDirectoryChanged notifyDirectoryChanged)
+            INotifyDirectoryChanged? notifyDirectoryChanged)
         {
             return Search.Find(
                 directoryPath: directoryPath,
@@ -407,12 +407,12 @@ namespace Orang.CommandLine
                 cancellationToken: context.CancellationToken);
         }
 
-        protected FileMatch MatchFile(string filePath)
+        protected FileMatch? MatchFile(string filePath)
         {
             return Search.MatchFile(filePath);
         }
 
-        protected string GetPathIndent(string baseDirectoryPath)
+        protected string GetPathIndent(string? baseDirectoryPath)
         {
             return (baseDirectoryPath != null) ? GetPathIndent() : "";
         }
@@ -473,8 +473,11 @@ namespace Orang.CommandLine
                     {
                         sb.Append("  ");
 
+                        //TODO: 
                         long size = (fileMatch.IsDirectory)
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
                             ? context.DirectorySizeMap[fileMatch.Path]
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
                             : new FileInfo(fileMatch.Path).Length;
 
                         string sizeText = size.ToString("n0");

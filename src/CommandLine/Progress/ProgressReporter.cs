@@ -24,7 +24,7 @@ namespace Orang.FileSystem
 
         public bool ProgressReported { get; set; }
 
-        public void SetBaseDirectoryPath(string baseDirectoryPath)
+        public void SetBaseDirectoryPath(string? baseDirectoryPath)
         {
             BaseDirectoryPath = baseDirectoryPath;
         }

@@ -15,11 +15,11 @@ namespace Orang.CommandLine
 {
     internal class ReplaceCommand : CommonFindCommand<ReplaceCommandOptions>
     {
-        private OutputSymbols _symbols;
+        private OutputSymbols? _symbols;
 
         public ReplaceCommand(ReplaceCommandOptions options) : base(options)
         {
-            Debug.Assert(!options.ContentFilter.IsNegative);
+            Debug.Assert(!options.ContentFilter!.IsNegative);
         }
 
         protected override bool CanDisplaySummary => Options.Input == null;
@@ -32,7 +32,7 @@ namespace Orang.CommandLine
 
             if (Options.Input != null)
             {
-                ExecuteInput(context);
+                ExecuteInput(context, Options.Input);
             }
             else
             {
@@ -40,17 +40,16 @@ namespace Orang.CommandLine
             }
         }
 
-        private void ExecuteInput(SearchContext context)
+        private void ExecuteInput(SearchContext context, string input)
         {
-            string input = Options.Input;
             int count = 0;
             var maxReason = MaxReason.None;
-            Match match = Options.ContentFilter.Match(input);
+            Match match = Options.ContentFilter!.Match(input);
 
             if (match.Success)
             {
-                ContentWriter contentWriter = null;
-                List<Capture> groups = null;
+                ContentWriter? contentWriter = null;
+                List<Capture>? groups = null;
 
                 try
                 {
@@ -60,7 +59,7 @@ namespace Orang.CommandLine
 
                     if (ShouldLog(Verbosity.Normal))
                     {
-                        MatchOutputInfo outputInfo = Options.CreateOutputInfo(input, match);
+                        MatchOutputInfo? outputInfo = Options.CreateOutputInfo(input, match);
 
                         contentWriter = ContentWriter.CreateReplace(Options.ContentDisplayStyle, input, Options.ReplaceOptions, FileWriterOptions, outputInfo: outputInfo);
                     }
@@ -180,7 +179,7 @@ namespace Orang.CommandLine
 
                     if (Options.AskMode == AskMode.Value)
                     {
-                        Lazy<TextWriter> lazyWriter = (Options.DryRun)
+                        Lazy<TextWriter>? lazyWriter = (Options.DryRun)
                             ? null
                             : new Lazy<TextWriter>(() => new StreamWriter(fileMatch.Path, false, fileMatch.Encoding));
 
