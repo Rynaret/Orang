@@ -18,9 +18,9 @@ namespace Orang.FileSystem
     {
         public FileSystemSearch(
             FileSystemFilter filter,
-            NameFilter directoryFilter = null,
-            IProgress<SearchProgress> searchProgress = null,
-            FileSystemSearchOptions options = null)
+            NameFilter? directoryFilter = null,
+            IProgress<SearchProgress>? searchProgress = null,
+            FileSystemSearchOptions? options = null)
         {
             Filter = filter ?? throw new ArgumentNullException(nameof(filter));
 
@@ -34,11 +34,11 @@ namespace Orang.FileSystem
 
         public FileSystemFilter Filter { get; }
 
-        public NameFilter DirectoryFilter { get; }
+        public NameFilter? DirectoryFilter { get; }
 
         public FileSystemSearchOptions Options { get; }
 
-        public IProgress<SearchProgress> SearchProgress { get; }
+        public IProgress<SearchProgress>? SearchProgress { get; }
 
         internal bool DisallowEnumeration { get; set; }
 
@@ -46,13 +46,13 @@ namespace Orang.FileSystem
 
         private FileNamePart Part => Filter.Part;
 
-        private Filter Name => Filter.Name;
+        private Filter? Name => Filter.Name;
 
-        private Filter Extension => Filter.Extension;
+        private Filter? Extension => Filter.Extension;
 
-        private Filter Content => Filter.Content;
+        private Filter? Content => Filter.Content;
 
-        private FilePropertyFilter Properties => Filter.Properties;
+        private FilePropertyFilter? Properties => Filter.Properties;
 
         private FileAttributes Attributes => Filter.Attributes;
 
@@ -73,7 +73,7 @@ namespace Orang.FileSystem
 
         internal IEnumerable<FileMatch> Find(
             string directoryPath,
-            INotifyDirectoryChanged notifyDirectoryChanged = null,
+            INotifyDirectoryChanged? notifyDirectoryChanged = null,
             CancellationToken cancellationToken = default)
         {
             var enumerationOptions = new EnumerationOptions()
@@ -87,9 +87,9 @@ namespace Orang.FileSystem
             };
 
             var directories = new Queue<Directory>();
-            Queue<Directory> subdirectories = (RecurseSubdirectories) ? new Queue<Directory>() : null;
+            Queue<Directory>? subdirectories = (RecurseSubdirectories) ? new Queue<Directory>() : null;
 
-            string currentDirectory = null;
+            string? currentDirectory = null;
 
             if (notifyDirectoryChanged != null)
             {
@@ -109,7 +109,7 @@ namespace Orang.FileSystem
                 if (SearchTarget != SearchTarget.Directories
                     && directory.IsMatch != false)
                 {
-                    IEnumerator<string> fi = null;
+                    IEnumerator<string> fi = null!;
 
                     try
                     {
@@ -129,7 +129,7 @@ namespace Orang.FileSystem
                         {
                             while (fi.MoveNext())
                             {
-                                FileMatch match = MatchFile(fi.Current);
+                                FileMatch? match = MatchFile(fi.Current);
 
                                 if (match != null)
                                     yield return match;
@@ -140,7 +140,7 @@ namespace Orang.FileSystem
                     }
                 }
 
-                IEnumerator<string> di = null;
+                IEnumerator<string> di = null!;
 
                 try
                 {
@@ -178,7 +178,7 @@ namespace Orang.FileSystem
 
                                 if (isMatch != false)
                                 {
-                                    FileMatch match = MatchDirectory(currentDirectory);
+                                    FileMatch? match = MatchDirectory(currentDirectory);
 
                                     if (match != null)
                                         yield return match;
@@ -223,22 +223,22 @@ namespace Orang.FileSystem
             }
         }
 
-        public FileMatch MatchFile(string path)
+        public FileMatch? MatchFile(string path)
         {
-            (FileMatch fileMatch, Exception exception) = MatchFileImpl(path);
+            (FileMatch? fileMatch, Exception? exception) = MatchFileImpl(path);
 
             Report(path, SearchProgressKind.File, exception: exception);
 
             return fileMatch;
         }
 
-        private (FileMatch fileMatch, Exception exception) MatchFileImpl(string path)
+        private (FileMatch? fileMatch, Exception? exception) MatchFileImpl(string path)
         {
             if (Extension?.IsMatch(FileNameSpan.FromFile(path, FileNamePart.Extension)) == false)
                 return default;
 
             FileNameSpan span = FileNameSpan.FromFile(path, Part);
-            Match match = null;
+            Match? match = null;
 
             if (Name != null)
             {
@@ -250,7 +250,7 @@ namespace Orang.FileSystem
 
             FileEmptyOption emptyOption = EmptyOption;
             bool isEmpty = false;
-            FileInfo fileInfo = null;
+            FileInfo? fileInfo = null;
 
             if (Attributes != 0
                 || emptyOption != FileEmptyOption.None
@@ -318,7 +318,7 @@ namespace Orang.FileSystem
                     {
                         using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read))
                         {
-                            Encoding bomEncoding = DetectEncoding(stream);
+                            Encoding? bomEncoding = DetectEncoding(stream);
 
                             if (emptyOption != FileEmptyOption.None)
                             {
@@ -368,19 +368,19 @@ namespace Orang.FileSystem
             return (new FileMatch(span, match, fileInfo), null);
         }
 
-        public FileMatch MatchDirectory(string path)
+        public FileMatch? MatchDirectory(string path)
         {
-            (FileMatch fileMatch, Exception exception) = MatchDirectoryImpl(path);
+            (FileMatch? fileMatch, Exception? exception) = MatchDirectoryImpl(path);
 
             Report(path, SearchProgressKind.Directory, isDirectory: true, exception);
 
             return fileMatch;
         }
 
-        private (FileMatch fileMatch, Exception exception) MatchDirectoryImpl(string path)
+        private (FileMatch? fileMatch, Exception? exception) MatchDirectoryImpl(string path)
         {
             FileNameSpan span = FileNameSpan.FromDirectory(path, Part);
-            Match match = null;
+            Match? match = null;
 
             if (Name != null)
             {
@@ -390,7 +390,7 @@ namespace Orang.FileSystem
                     return default;
             }
 
-            DirectoryInfo directoryInfo = null;
+            DirectoryInfo? directoryInfo = null;
 
             if (Attributes != 0
                 || EmptyOption != FileEmptyOption.None
@@ -438,12 +438,12 @@ namespace Orang.FileSystem
 
         private bool IncludeDirectory(string path)
         {
-            FileNameSpan name = FileNameSpan.FromDirectory(path, DirectoryFilter.Part);
+            FileNameSpan name = FileNameSpan.FromDirectory(path, DirectoryFilter!.Part);
 
-            return Name.IsMatch(name);
+            return DirectoryFilter.Name.IsMatch(name);
         }
 
-        private void Report(string path, SearchProgressKind kind, bool isDirectory = false, Exception exception = null)
+        private void Report(string path, SearchProgressKind kind, bool isDirectory = false, Exception? exception = null)
         {
             SearchProgress?.Report(path, kind, isDirectory: isDirectory, exception);
         }
@@ -459,8 +459,8 @@ namespace Orang.FileSystem
 
         public void Replace(
             string directoryPath,
-            ReplaceOptions replaceOptions = null,
-            IProgress<OperationProgress> progress = null,
+            ReplaceOptions? replaceOptions = null,
+            IProgress<OperationProgress>? progress = null,
             bool dryRun = false,
             CancellationToken cancellationToken = default)
         {
@@ -490,8 +490,8 @@ namespace Orang.FileSystem
 
         public void Delete(
             string directoryPath,
-            DeleteOptions deleteOptions = null,
-            IProgress<OperationProgress> progress = null,
+            DeleteOptions? deleteOptions = null,
+            IProgress<OperationProgress>? progress = null,
             bool dryRun = false,
             CancellationToken cancellationToken = default)
         {
@@ -514,8 +514,8 @@ namespace Orang.FileSystem
         public void Rename(
             string directoryPath,
             RenameOptions renameOptions,
-            IDialogProvider<OperationProgress> dialogProvider = null,
-            IProgress<OperationProgress> progress = null,
+            IDialogProvider<OperationProgress>? dialogProvider = null,
+            IProgress<OperationProgress>? progress = null,
             bool dryRun = false,
             CancellationToken cancellationToken = default)
         {
@@ -564,9 +564,9 @@ namespace Orang.FileSystem
         public void Copy(
             string directoryPath,
             string destinationPath,
-            CopyOptions copyOptions = null,
-            IDialogProvider<OperationProgress> dialogProvider = null,
-            IProgress<OperationProgress> progress = null,
+            CopyOptions? copyOptions = null,
+            IDialogProvider<OperationProgress>? dialogProvider = null,
+            IProgress<OperationProgress>? progress = null,
             bool dryRun = false,
             CancellationToken cancellationToken = default)
         {
@@ -595,9 +595,9 @@ namespace Orang.FileSystem
         public void Move(
             string directoryPath,
             string destinationPath,
-            CopyOptions copyOptions = null,
-            IDialogProvider<OperationProgress> dialogProvider = null,
-            IProgress<OperationProgress> progress = null,
+            CopyOptions? copyOptions = null,
+            IDialogProvider<OperationProgress>? dialogProvider = null,
+            IProgress<OperationProgress>? progress = null,
             bool dryRun = false,
             CancellationToken cancellationToken = default)
         {
@@ -627,7 +627,7 @@ namespace Orang.FileSystem
             string directoryPath,
             string destinationPath,
             CopyOptions copyOptions,
-            IDialogProvider<OperationProgress> dialogProvider)
+            IDialogProvider<OperationProgress>? dialogProvider)
         {
             if (directoryPath == null)
                 throw new ArgumentNullException(nameof(directoryPath));
@@ -654,7 +654,7 @@ namespace Orang.FileSystem
             VerifyConflictResolution(copyOptions.ConflictResolution, dialogProvider);
         }
 
-        private static void VerifyConflictResolution(ConflictResolution conflictResolution, IDialogProvider<OperationProgress> dialogProvider)
+        private static void VerifyConflictResolution(ConflictResolution conflictResolution, IDialogProvider<OperationProgress>? dialogProvider)
         {
             if (conflictResolution == ConflictResolution.Ask
                 && dialogProvider == null)

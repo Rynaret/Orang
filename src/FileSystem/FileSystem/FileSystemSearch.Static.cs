@@ -9,7 +9,7 @@ namespace Orang.FileSystem
         internal static void Replace(
             string directoryPath,
             FileSystemFilter filter,
-            ReplaceOptions replaceOptions = null,
+            ReplaceOptions? replaceOptions = null,
             SearchTarget searchTarget = SearchTarget.Files,
             bool recurseSubdirectories = true,
             bool dryRun = false,

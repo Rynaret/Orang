@@ -50,7 +50,7 @@ namespace Orang.CommandLine
         {
             string indent = GetPathIndent(baseDirectoryPath);
 
-            List<ReplaceItem> replaceItems = ReplaceHelpers.GetReplaceItems(fileMatch.NameMatch, Options.ReplaceOptions, NameFilter.Predicate, context.CancellationToken);
+            List<ReplaceItem> replaceItems = ReplaceHelpers.GetReplaceItems(fileMatch.NameMatch!, Options.ReplaceOptions, NameFilter.Predicate, context.CancellationToken);
 
             string path = fileMatch.Path;
             string newPath = ReplaceHelpers.GetNewPath(fileMatch, replaceItems);

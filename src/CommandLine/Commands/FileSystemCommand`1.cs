@@ -206,7 +206,15 @@ namespace Orang.CommandLine
 
             if (sortOptions?.Descriptors.Any() == true)
             {
-                results = SortHelpers.SortResults(context.Results, sortOptions.Descriptors, Options.PathDisplayStyle);
+                PathDisplayStyle pathDisplayStyle = Options.PathDisplayStyle;
+
+                if (pathDisplayStyle == PathDisplayStyle.Match
+                    && NameFilter == null)
+                {
+                    pathDisplayStyle = PathDisplayStyle.Full;
+                }
+
+                results = SortHelpers.SortResults(context.Results, sortOptions.Descriptors, pathDisplayStyle);
 
                 if (sortOptions.MaxCount > 0)
                     results = results.Take(sortOptions.MaxCount);

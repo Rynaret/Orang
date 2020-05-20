@@ -6,7 +6,7 @@ namespace Orang.FileSystem
 {
     public readonly struct SearchProgress
     {
-        internal SearchProgress(string path, SearchProgressKind kind, bool isDirectory, Exception exception = null)
+        internal SearchProgress(string path, SearchProgressKind kind, bool isDirectory, Exception? exception = null)
         {
             Path = path;
             Kind = kind;
@@ -18,7 +18,7 @@ namespace Orang.FileSystem
 
         public SearchProgressKind Kind { get; }
 
-        public Exception Exception { get; }
+        public Exception? Exception { get; }
 
         public bool IsDirectory { get; }
     }
