@@ -26,13 +26,15 @@ namespace Orang.CommandLine
 
             if (input == null)
             {
-                input = ConsoleHelpers.ReadRedirectedInput();
+                string? redirectedInput = ConsoleHelpers.ReadRedirectedInput();
 
-                if (input == null)
+                if (redirectedInput == null)
                 {
                     Logger.WriteError("Input is missing.");
                     return false;
                 }
+
+                input = redirectedInput;
             }
 
             options.Input = input;

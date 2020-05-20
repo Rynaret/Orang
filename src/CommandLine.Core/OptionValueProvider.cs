@@ -95,8 +95,7 @@ namespace Orang
             return false;
         }
 
-        //TODO: GetValueOrDefault
-        public OptionValue? GetValue(string name)
+        public OptionValue GetValue(string name)
         {
             foreach (OptionValue value in Values)
             {
@@ -104,7 +103,7 @@ namespace Orang
                     return value;
             }
 
-            return default;
+            throw new ArgumentException("", nameof(name));
         }
 
         public static IEnumerable<OptionValueProvider> GetProviders(IEnumerable<CommandOption> options, IEnumerable<OptionValueProvider> providers)

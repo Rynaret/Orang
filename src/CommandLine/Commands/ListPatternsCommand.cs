@@ -35,7 +35,7 @@ namespace Orang.CommandLine
         {
             IEnumerable<SyntaxItem> items = SyntaxItems.Load();
 
-            string filter = Options.Filter;
+            string? filter = Options.Filter;
 
             ImmutableArray<SyntaxSection> sections = Options.Sections;
 
@@ -168,7 +168,7 @@ namespace Orang.CommandLine
         {
             IEnumerable<PatternInfo> patterns = GetPatterns(ch, inCharGroup: Options.InCharGroup, options: Options.RegexOptions);
 
-            string filter = Options.Filter;
+            string? filter = Options.Filter;
 
             if (!string.IsNullOrEmpty(filter))
             {

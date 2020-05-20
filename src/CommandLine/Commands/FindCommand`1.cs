@@ -64,6 +64,7 @@ namespace Orang.CommandLine
                 _storageIndexes?.Add(_storage!.Count);
         }
 
+        //TODO: rename
         protected override void ExecuteMatch(
             FileMatch fileMatch,
             SearchContext context,
@@ -76,10 +77,7 @@ namespace Orang.CommandLine
             if (!Options.OmitPath)
                 WritePath(context, fileMatch, baseDirectoryPath, indent, columnWidths);
 
-            //TODO: 
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-            if (ContentFilter.IsNegative
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
+            if (ContentFilter!.IsNegative
                 || fileMatch.IsDirectory)
             {
                 WriteLineIf(!Options.OmitPath, Verbosity.Minimal);
@@ -109,6 +107,7 @@ namespace Orang.CommandLine
             AskToContinue(context, indent);
         }
 
+        //TODO: WriteContentMatches
         private void WriteMatches(
             FileMatch fileMatch,
             ContentWriterOptions writerOptions,
@@ -123,10 +122,7 @@ namespace Orang.CommandLine
             {
                 captures = ListCache<Capture>.GetInstance();
 
-                //TODO: 
-#pragma warning disable CS8604 // Possible null reference argument.
-                GetCaptures(fileMatch.ContentMatch, writerOptions.GroupNumber, context, isPathWritten: !Options.OmitPath, predicate: ContentFilter!.Predicate, captures: captures);
-#pragma warning restore CS8604 // Possible null reference argument.
+                GetCaptures(fileMatch.ContentMatch!, writerOptions.GroupNumber, context, isPathWritten: !Options.OmitPath, predicate: ContentFilter!.Predicate, captures: captures);
 
                 bool hasAnyFunction = Options.ModifyOptions.HasAnyFunction;
 
@@ -154,7 +150,8 @@ namespace Orang.CommandLine
                         input: fileMatch.ContentText,
                         options: writerOptions,
                         storage: (hasAnyFunction) ? _fileStorage : _storage,
-                        outputInfo: Options.CreateOutputInfo(fileMatch),
+                        //TODO: test
+                        outputInfo: Options.CreateOutputInfo(fileMatch.ContentText, fileMatch.ContentMatch!, ContentFilter),
                         writer: (hasAnyFunction) ? null : ContentTextWriter.Default,
                         ask: AskMode == AskMode.Value);
                 }

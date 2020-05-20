@@ -103,10 +103,7 @@ namespace Orang.CommandLine
 
                     CaptureFactory.GetCaptures(ref captures, match, Filter.GroupNumber);
 
-                    //TODO: 
-#pragma warning disable CS8604 // Possible null reference argument.
-                    var writer = new AllLinesContentWriter(value, ContentTextWriter.Default, ContentWriterOptions);
-#pragma warning restore CS8604 // Possible null reference argument.
+                    var writer = new AllLinesContentWriter(value, ContentTextWriter.Default, ContentWriterOptions!);
 
                     writer.WriteMatches(captures);
 

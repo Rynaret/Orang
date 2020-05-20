@@ -12,7 +12,7 @@ namespace Orang.CommandLine
 {
     internal abstract class FileSystemCommandOptions : CommonRegexCommandOptions
     {
-        private string _doubleIndent;
+        private string? _doubleIndent;
 
         internal FileSystemCommandOptions()
         {
@@ -42,7 +42,7 @@ namespace Orang.CommandLine
 
         public bool Progress { get; internal set; }
 
-        public Encoding DefaultEncoding { get; internal set; }
+        public Encoding DefaultEncoding { get; internal set; } = null!;
 
         public FileEmptyOption EmptyOption { get; internal set; }
 
@@ -50,7 +50,7 @@ namespace Orang.CommandLine
 
         public SortOptions? SortOptions { get; internal set; }
 
-        public FilePropertyFilter FilePropertyFilter { get; internal set; }
+        public FilePropertyFilter? FilePropertyFilter { get; internal set; }
 
         public FilterPredicate<DateTime>? CreationTimePredicate { get; internal set; }
 
@@ -72,26 +72,15 @@ namespace Orang.CommandLine
 
         internal bool IncludeBaseDirectory => Format.IncludeBaseDirectory;
 
-        internal MatchOutputInfo? CreateOutputInfo(FileMatch fileMatch)
-        {
-            //TODO: 
-#pragma warning disable CS8604 // Possible null reference argument.
-            return CreateOutputInfo(fileMatch.ContentText, fileMatch.ContentMatch);
-#pragma warning restore CS8604 // Possible null reference argument.
-        }
-
-        internal MatchOutputInfo? CreateOutputInfo(string input, Match match)
+        internal MatchOutputInfo? CreateOutputInfo(string input, Match match, Filter filter)
         {
             if (ContentDisplayStyle != ContentDisplayStyle.ValueDetail)
                 return null;
 
-            //TODO: 
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-            int groupNumber = ContentFilter.GroupNumber;
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
+            int groupNumber = filter.GroupNumber;
 
             return MatchOutputInfo.Create(
-                MatchData.Create(input, ContentFilter.Regex, match),
+                MatchData.Create(input, filter.Regex, match),
                 groupNumber,
                 includeGroupNumber: groupNumber >= 0,
                 includeCaptureNumber: false,

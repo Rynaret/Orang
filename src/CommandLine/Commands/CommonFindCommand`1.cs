@@ -79,7 +79,7 @@ namespace Orang.CommandLine
 
         protected virtual ContentWriterOptions CreateContentWriterOptions(string indent)
         {
-            int groupNumber = ContentFilter.GroupNumber;
+            int groupNumber = ContentFilter!.GroupNumber;
 
             GroupDefinition? groupDefinition = (groupNumber >= 0)
                 ? new GroupDefinition(groupNumber, ContentFilter.GroupName)

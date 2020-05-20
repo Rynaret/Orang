@@ -44,7 +44,8 @@ namespace Orang.CommandLine
         {
             int count = 0;
             var maxReason = MaxReason.None;
-            Match? match = Options.ContentFilter!.Match(input);
+            Filter contentFilter = ContentFilter!;
+            Match? match = contentFilter.Match(input);
 
             if (match != null)
             {
@@ -55,11 +56,11 @@ namespace Orang.CommandLine
                 {
                     groups = ListCache<Capture>.GetInstance();
 
-                    maxReason = GetCaptures(match, FileWriterOptions.GroupNumber, context, isPathWritten: false, predicate: Options.ContentFilter.Predicate, captures: groups);
+                    maxReason = GetCaptures(match, FileWriterOptions.GroupNumber, context, isPathWritten: false, predicate: contentFilter.Predicate, captures: groups);
 
                     if (ShouldLog(Verbosity.Normal))
                     {
-                        MatchOutputInfo? outputInfo = Options.CreateOutputInfo(input, match);
+                        MatchOutputInfo? outputInfo = Options.CreateOutputInfo(input, match, contentFilter);
 
                         contentWriter = ContentWriter.CreateReplace(Options.ContentDisplayStyle, input, Options.ReplaceOptions, FileWriterOptions, outputInfo: outputInfo);
                     }
@@ -175,7 +176,7 @@ namespace Orang.CommandLine
                 if (Options.AskMode == AskMode.Value
                     || ShouldLog(Verbosity.Normal))
                 {
-                    MatchOutputInfo? outputInfo = Options.CreateOutputInfo(fileMatch);
+                    MatchOutputInfo? outputInfo = Options.CreateOutputInfo(fileMatch.ContentText, fileMatch.ContentMatch!, ContentFilter!);
 
                     if (Options.AskMode == AskMode.Value)
                     {
@@ -196,10 +197,7 @@ namespace Orang.CommandLine
                 }
                 else
                 {
-                    //TODO: 
-#pragma warning disable CS8604 // Possible null reference argument.
-                    contentWriter = new TextWriterContentWriter(fileMatch.ContentText, Options.ReplaceOptions, textWriter, writerOptions);
-#pragma warning restore CS8604 // Possible null reference argument.
+                    contentWriter = new TextWriterContentWriter(fileMatch.ContentText, Options.ReplaceOptions, textWriter!, writerOptions);
                 }
 
                 WriteMatches(contentWriter, groups, context);

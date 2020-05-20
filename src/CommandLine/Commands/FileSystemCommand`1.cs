@@ -21,8 +21,11 @@ namespace Orang.CommandLine
         }
 
         private FileSystemSearch? _search;
+        private ProgressReporter? _progressReporter;
 
         protected FileSystemSearch Search => _search ?? (_search = CreateSearch());
+
+        private ProgressReporter? ProgressReporter => _progressReporter ?? (_progressReporter = CreateProgressReporter());
 
         public Filter? NameFilter => Options.NameFilter;
 
@@ -59,6 +62,7 @@ namespace Orang.CommandLine
             return new FileSystemSearch(
                 filter: filter,
                 directoryFilter: directoryFilter,
+                searchProgress: ProgressReporter,
                 options: options);
         }
 
@@ -78,9 +82,7 @@ namespace Orang.CommandLine
                 ? new List<SearchResult>()
                 : null;
 
-            ProgressReporter? progress = CreateProgressReporter();
-
-            var context = new SearchContext(new SearchTelemetry(), progress: progress, results: results, cancellationToken: cancellationToken);
+            var context = new SearchContext(new SearchTelemetry(), progress: ProgressReporter, results: results, cancellationToken: cancellationToken);
 
             ExecuteCore(context);
 
@@ -233,27 +235,21 @@ namespace Orang.CommandLine
                 if (fileProperties.Contains(FileProperty.Size))
                 {
                     long maxSize = 0;
-                    if (context.Telemetry.MaxFileSize > 0)
+
+                    foreach (SearchResult result in resultList)
                     {
-                        maxSize = context.Telemetry.MaxFileSize;
-                    }
-                    else
-                    {
-                        foreach (SearchResult result in resultList)
+                        long size = result.GetSize();
+
+                        if (result.IsDirectory)
                         {
-                            long size = result.GetSize();
+                            if (context.DirectorySizeMap == null)
+                                context.DirectorySizeMap = new Dictionary<string, long>();
 
-                            if (result.IsDirectory)
-                            {
-                                if (context.DirectorySizeMap == null)
-                                    context.DirectorySizeMap = new Dictionary<string, long>();
-
-                                context.DirectorySizeMap[result.Path] = size;
-                            }
-
-                            if (size > maxSize)
-                                maxSize = size;
+                            context.DirectorySizeMap[result.Path] = size;
                         }
+
+                        if (size > maxSize)
+                            maxSize = size;
                     }
 
                     maxSizeWidth = maxSize.ToString("n0").Length;
@@ -424,7 +420,7 @@ namespace Orang.CommandLine
                 : "";
         }
 
-        protected virtual void WritePath(SearchContext context, FileMatch fileMatch, string baseDirectoryPath, string indent, ColumnWidths columnWidths)
+        protected virtual void WritePath(SearchContext context, FileMatch fileMatch, string? baseDirectoryPath, string indent, ColumnWidths? columnWidths)
         {
             WritePath(context, fileMatch, baseDirectoryPath, indent, columnWidths, Colors.Match);
 
@@ -473,11 +469,8 @@ namespace Orang.CommandLine
                     {
                         sb.Append("  ");
 
-                        //TODO: 
                         long size = (fileMatch.IsDirectory)
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-                            ? context.DirectorySizeMap[fileMatch.Path]
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
+                            ? context.DirectorySizeMap![fileMatch.Path]
                             : new FileInfo(fileMatch.Path).Length;
 
                         string sizeText = size.ToString("n0");
@@ -486,9 +479,6 @@ namespace Orang.CommandLine
                         sb.Append(sizeText);
 
                         context.Telemetry.FilesTotalSize += size;
-
-                        if (size > context.Telemetry.MaxFileSize)
-                            context.Telemetry.MaxFileSize = size;
                     }
                     else if (fileProperty == FileProperty.CreationTime)
                     {

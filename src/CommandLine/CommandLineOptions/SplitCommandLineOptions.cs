@@ -36,13 +36,13 @@ namespace Orang.CommandLine
 
             options = (SplitCommandOptions)baseOptions;
 
-            if (!FilterParser.TryParse(Content, OptionNames.Content, OptionValueProviders.PatternOptionsWithoutGroupAndPartAndNegativeProvider, out Filter filter))
+            if (!FilterParser.TryParse(Content, OptionNames.Content, OptionValueProviders.PatternOptionsWithoutGroupAndPartAndNegativeProvider, out Filter? filter))
                 return false;
 
             if (!TryParseAsEnumFlags(Highlight, OptionNames.Highlight, out HighlightOptions highlightOptions, defaultValue: HighlightOptions.Split, provider: OptionValueProviders.SplitHighlightOptionsProvider))
                 return false;
 
-            options.Filter = filter;
+            options.Filter = filter!;
             options.HighlightOptions = highlightOptions;
             options.OmitGroups = NoGroups;
             options.MaxCount = MaxCount;

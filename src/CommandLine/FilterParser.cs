@@ -123,7 +123,7 @@ namespace Orang.CommandLine
                     }
                 }
 
-                if (Expression.TryParse(option, out Expression expression))
+                if (Expression.TryParse(option, out Expression? expression))
                 {
                     if (OptionValues.Length.IsKeyOrShortKey(expression.Identifier)
                         && provider.ContainsKeyOrShortKey(expression.Identifier))
@@ -162,7 +162,7 @@ namespace Orang.CommandLine
                     }
                 default:
                     {
-                        WriteError($"Values '{OptionValueProviders.PatternOptionsProvider.GetValue(nameof(PatternOptions.WholeWord))!.HelpValue}' and '{OptionValueProviders.PatternOptionsProvider.GetValue(nameof(PatternOptions.WholeLine))!.HelpValue}' cannot be combined.");
+                        WriteError($"Values '{OptionValueProviders.PatternOptionsProvider.GetValue(nameof(PatternOptions.WholeWord)).HelpValue}' and '{OptionValueProviders.PatternOptionsProvider.GetValue(nameof(PatternOptions.WholeLine)).HelpValue}' cannot be combined.");
                         return false;
                     }
             }
