@@ -13,7 +13,7 @@ using static Orang.Logger;
 
 namespace Orang.CommandLine
 {
-    internal class ReplaceCommand : CommonFindCommand<ReplaceCommandOptions>
+    internal sealed class ReplaceCommand : CommonFindCommand<ReplaceCommandOptions>
     {
         private OutputSymbols? _symbols;
 
@@ -93,39 +93,12 @@ namespace Orang.CommandLine
             }
         }
 
-        protected override void ExecuteFile(string filePath, SearchContext context)
+        protected override void ExecuteMatchCore(FileMatch fileMatch, SearchContext context, string? baseDirectoryPath = null, ColumnWidths? columnWidths = null)
         {
-            FileMatch? fileMatch = MatchFile(filePath);
-
-            if (fileMatch != null)
-                ExecuteOrAddMatch(fileMatch, context, FileWriterOptions);
+            throw new NotSupportedException();
         }
 
-        protected override void ExecuteDirectory(string directoryPath, SearchContext context)
-        {
-            foreach (FileMatch fileMatch in GetMatches(directoryPath, context))
-            {
-                ExecuteOrAddMatch(fileMatch, context, DirectoryWriterOptions, directoryPath);
-
-                if (context.TerminationReason == TerminationReason.Canceled)
-                    break;
-
-                if (context.TerminationReason == TerminationReason.MaxReached)
-                    break;
-            }
-        }
-
-        protected override void ExecuteMatch(FileMatch fileMatch, SearchContext context, string? baseDirectoryPath = null, ColumnWidths? columnWidths = null)
-        {
-            string indent = GetPathIndent(baseDirectoryPath);
-
-            if (!Options.OmitPath)
-                WritePath(context, fileMatch, baseDirectoryPath, indent, columnWidths);
-
-            AskToContinue(context, indent);
-        }
-
-        protected override void ExecuteMatch(
+        protected override void ExecuteMatchWithContentCore(
             FileMatch fileMatch,
             SearchContext context,
             ContentWriterOptions writerOptions,
@@ -137,15 +110,6 @@ namespace Orang.CommandLine
             if (!Options.OmitPath)
                 WritePath(context, fileMatch, baseDirectoryPath, indent, columnWidths);
 
-            ReplaceMatches(fileMatch, indent, writerOptions, context);
-        }
-
-        private void ReplaceMatches(
-            FileMatch fileMatch,
-            string indent,
-            ContentWriterOptions writerOptions,
-            SearchContext context)
-        {
             SearchTelemetry telemetry = context.Telemetry;
 
             ContentWriter? contentWriter = null;

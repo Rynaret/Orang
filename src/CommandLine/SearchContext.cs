@@ -32,12 +32,5 @@ namespace Orang.CommandLine
         public CancellationToken CancellationToken { get; }
 
         public TerminationReason TerminationReason { get; set; }
-
-        public void AddResult(FileMatch match, string? baseDirectoryPath)
-        {
-            var result = new SearchResult(match, baseDirectoryPath);
-
-            Results!.Add(result);
-        }
     }
 }

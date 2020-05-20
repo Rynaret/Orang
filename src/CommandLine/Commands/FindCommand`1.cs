@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using Orang.FileSystem;
 using static Orang.CommandLine.LogHelpers;
@@ -64,8 +63,7 @@ namespace Orang.CommandLine
                 _storageIndexes?.Add(_storage!.Count);
         }
 
-        //TODO: rename
-        protected override void ExecuteMatch(
+        protected override void ExecuteMatchWithContentCore(
             FileMatch fileMatch,
             SearchContext context,
             ContentWriterOptions writerOptions,
@@ -84,13 +82,13 @@ namespace Orang.CommandLine
             }
             else
             {
-                WriteMatches(fileMatch, writerOptions, context);
+                WriteContent(fileMatch, writerOptions, context);
             }
 
             AskToContinue(context, indent);
         }
 
-        protected override void ExecuteMatch(FileMatch fileMatch, SearchContext context, string? baseDirectoryPath = null, ColumnWidths? columnWidths = null)
+        protected override void ExecuteMatchCore(FileMatch fileMatch, SearchContext context, string? baseDirectoryPath = null, ColumnWidths? columnWidths = null)
         {
             string indent = GetPathIndent(baseDirectoryPath);
 
@@ -107,8 +105,7 @@ namespace Orang.CommandLine
             AskToContinue(context, indent);
         }
 
-        //TODO: WriteContentMatches
-        private void WriteMatches(
+        private void WriteContent(
             FileMatch fileMatch,
             ContentWriterOptions writerOptions,
             SearchContext context)
@@ -150,7 +147,6 @@ namespace Orang.CommandLine
                         input: fileMatch.ContentText,
                         options: writerOptions,
                         storage: (hasAnyFunction) ? _fileStorage : _storage,
-                        //TODO: test
                         outputInfo: Options.CreateOutputInfo(fileMatch.ContentText, fileMatch.ContentMatch!, ContentFilter),
                         writer: (hasAnyFunction) ? null : ContentTextWriter.Default,
                         ask: AskMode == AskMode.Value);

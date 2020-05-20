@@ -111,11 +111,11 @@ namespace Orang.CommandLine
             {
                 if (ContentFilter != null)
                 {
-                    ProcessMatch(fileMatch, context, FileWriterOptions);
+                    ExecuteMatchWithContent(fileMatch, context, FileWriterOptions);
                 }
                 else
                 {
-                    ExecuteOrAddMatch(fileMatch, context, null);
+                    ExecuteMatch(fileMatch, context);
                 }
             }
         }
@@ -126,11 +126,11 @@ namespace Orang.CommandLine
             {
                 if (ContentFilter != null)
                 {
-                    ProcessMatch(fileMatch, context, DirectoryWriterOptions, directoryPath);
+                    ExecuteMatchWithContent(fileMatch, context, DirectoryWriterOptions, directoryPath);
                 }
                 else
                 {
-                    ExecuteOrAddMatch(fileMatch, context, directoryPath);
+                    ExecuteMatch(fileMatch, context, directoryPath);
                 }
 
                 if (context.TerminationReason == TerminationReason.Canceled)
@@ -141,19 +141,10 @@ namespace Orang.CommandLine
             }
         }
 
-        private void ProcessMatch(
+        protected void ExecuteMatchWithContent(
             FileMatch fileMatch,
             SearchContext context,
             ContentWriterOptions writerOptions,
-            string? baseDirectoryPath = null)
-        {
-            ExecuteOrAddMatch(fileMatch, context, writerOptions, baseDirectoryPath);
-        }
-
-        protected void ExecuteOrAddMatch(
-            FileMatch fileMatch,
-            SearchContext context,
-            ContentWriterOptions? writerOptions,
             string? baseDirectoryPath = null)
         {
             if (fileMatch.IsDirectory)
@@ -178,11 +169,11 @@ namespace Orang.CommandLine
             {
                 EndProgress(context);
 
-                ExecuteMatch(fileMatch, context, writerOptions, baseDirectoryPath);
+                ExecuteMatchWithContentCore(fileMatch, context, writerOptions, baseDirectoryPath);
             }
         }
 
-        protected abstract void ExecuteMatch(
+        protected abstract void ExecuteMatchWithContentCore(
             FileMatch fileMatch,
             SearchContext context,
             ContentWriterOptions writerOptions,
@@ -193,14 +184,11 @@ namespace Orang.CommandLine
         {
             if (ContentFilter != null)
             {
-                //TODO: infinite loop
-#pragma warning disable CS8604 // Possible null reference argument.
-                ExecuteMatch(result.FileMatch, context, result.WriterOptions, result.BaseDirectoryPath, columnWidths);
-#pragma warning restore CS8604 // Possible null reference argument.
+                ExecuteMatchWithContentCore(result.FileMatch, context, result.WriterOptions!, result.BaseDirectoryPath, columnWidths);
             }
             else
             {
-                ExecuteMatch(result.FileMatch, context, result.BaseDirectoryPath, columnWidths);
+                ExecuteMatchCore(result.FileMatch, context, result.BaseDirectoryPath, columnWidths);
             }
         }
 

@@ -70,7 +70,7 @@ namespace Orang.CommandLine
 
         protected abstract void ExecuteFile(string filePath, SearchContext context);
 
-        protected abstract void ExecuteMatch(FileMatch fileMatch, SearchContext context, string? baseDirectoryPath, ColumnWidths? columnWidths);
+        protected abstract void ExecuteMatchCore(FileMatch fileMatch, SearchContext context, string? baseDirectoryPath, ColumnWidths? columnWidths);
 
         protected abstract void ExecuteResult(SearchResult result, SearchContext context, ColumnWidths? columnWidths);
 
@@ -356,7 +356,7 @@ namespace Orang.CommandLine
             }
         }
 
-        protected void ExecuteOrAddMatch(FileMatch fileMatch, SearchContext context, string? baseDirectoryPath)
+        protected void ExecuteMatch(FileMatch fileMatch, SearchContext context, string? baseDirectoryPath = null)
         {
             if (fileMatch.IsDirectory)
             {
@@ -372,13 +372,15 @@ namespace Orang.CommandLine
 
             if (context.Results != null)
             {
-                context.AddResult(fileMatch, baseDirectoryPath);
+                var searchResult = new SearchResult(fileMatch, baseDirectoryPath);
+
+                context.Results.Add(searchResult);
             }
             else
             {
                 EndProgress(context);
 
-                ExecuteMatch(fileMatch, context, baseDirectoryPath, columnWidths: null);
+                ExecuteMatchCore(fileMatch, context, baseDirectoryPath, columnWidths: null);
             }
         }
 

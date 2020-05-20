@@ -34,15 +34,7 @@ namespace Orang.CommandLine
             return search;
         }
 
-        protected override void ProcessMatch(
-            FileMatch fileMatch,
-            SearchContext context,
-            string? baseDirectoryPath = null)
-        {
-            ExecuteOrAddMatch(fileMatch, context, baseDirectoryPath);
-        }
-
-        protected override void ExecuteMatch(
+        protected override void ExecuteMatchCore(
             FileMatch fileMatch,
             SearchContext context,
             string? baseDirectoryPath,
